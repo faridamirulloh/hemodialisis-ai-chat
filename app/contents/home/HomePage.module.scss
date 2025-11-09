@@ -1,0 +1,146 @@
+.homeContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e1fff1, #ffffff);
+  color: #111827;
+
+  .heroSection {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+
+    .heroContent {
+      max-width: 700px;
+
+      .heroIcon {
+        font-size: 3rem;
+        color: #059669;
+        margin-bottom: 1rem;
+      }
+
+      .heroTitle {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #047857;
+      }
+
+      .heroSubtitle {
+        font-size: 1.2rem;
+        color: #374151;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+      }
+
+      .heroButtons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        a {
+          text-decoration: none;
+
+          button {
+            font-size: 1rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  .footer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    background: #f9fafb;
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+
+  /* Tablet landscape (<=1024px) */
+  @media (max-width: 1024px) {
+    .heroSection {
+      padding: 3.5rem 2rem;
+
+      .heroContent {
+        max-width: 600px;
+
+        .heroTitle {
+          font-size: 2.2rem;
+        }
+
+        .heroSubtitle {
+          font-size: 1.1rem;
+        }
+      }
+    }
+  }
+
+  /* Tablet portrait (<=768px) */
+  @media (max-width: 768px) {
+    .heroSection {
+      padding: 3rem 1.5rem;
+
+      .heroContent {
+        .heroTitle {
+          font-size: 2rem;
+        }
+
+        .heroSubtitle {
+          font-size: 1rem;
+        }
+
+        .heroButtons {
+          flex-direction: column;
+          gap: 0.75rem;
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+
+  /* Mobile (<=480px) */
+  @media (max-width: 480px) {
+    .heroSection {
+      padding: 2.5rem 1rem;
+
+      .heroContent {
+        .heroIcon {
+          font-size: 2.2rem;
+        }
+
+        .heroTitle {
+          font-size: 1.6rem;
+        }
+
+        .heroSubtitle {
+          font-size: 0.95rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .heroButtons {
+          gap: 0.5rem;
+
+          button {
+            font-size: 0.9rem;
+            padding: 0.7rem 1rem;
+          }
+        }
+      }
+    }
+
+    .footer {
+      font-size: 0.8rem;
+      padding: 1rem;
+    }
+  }
+}
