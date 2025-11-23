@@ -1,0 +1,19 @@
+import bcrypt from 'bcrypt';
+import { createUserSession } from './sessions.server';
+import prisma from '~/lib/prisma.server';
+
+export async function signup({ email, name, password }: { email: string; name: string; password: string }) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({ data: { email, name, password: hashedPassword } });
+  return createUserSession(user.id, '/');
+}
+
+export async function login({ email, password }: { email: string; password: string }) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return null;
+
+  const isValid = await bcrypt.compare(password, user.password);
+  if (!isValid) return null;
+
+  return createUserSession(user.id, '/');
+}

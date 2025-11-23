@@ -1,9 +1,15 @@
 .homeContainer {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(180deg, #e1fff1, #ffffff);
   color: #111827;
+
+  .heroAction {
+    display: flex;
+    align-self: flex-end;
+    padding: 1rem;
+  }
 
   .heroSection {
     flex: 1;
@@ -11,10 +17,15 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 4rem 2rem;
 
     .heroContent {
       max-width: 700px;
+
+      .userWelcome {
+        font-size: 3rem;
+        color: #059669;
+        margin-bottom: 1rem;
+      }
 
       .heroIcon {
         font-size: 3rem;
@@ -41,6 +52,7 @@
         gap: 1rem;
         justify-content: center;
         flex-wrap: wrap;
+        padding-bottom: 1rem;
 
         a {
           text-decoration: none;
@@ -66,8 +78,6 @@
   /* Tablet landscape (<=1024px) */
   @media (max-width: 1024px) {
     .heroSection {
-      padding: 3.5rem 2rem;
-
       .heroContent {
         max-width: 600px;
 
@@ -85,8 +95,6 @@
   /* Tablet portrait (<=768px) */
   @media (max-width: 768px) {
     .heroSection {
-      padding: 3rem 1.5rem;
-
       .heroContent {
         .heroTitle {
           font-size: 2rem;
@@ -111,8 +119,6 @@
   /* Mobile (<=480px) */
   @media (max-width: 480px) {
     .heroSection {
-      padding: 2.5rem 1rem;
-
       .heroContent {
         .heroIcon {
           font-size: 2.2rem;

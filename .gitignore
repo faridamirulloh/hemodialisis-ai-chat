@@ -5,3 +5,5 @@
 /.react-router/
 /build/
 pnpm-lock.yaml
+
+/app/generated/prisma

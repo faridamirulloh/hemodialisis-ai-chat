@@ -1,22 +1,12 @@
-/* eslint-disable no-unused-vars */
-import { PrismaClient } from '@prisma/client/extension';
+import { withAccelerate } from '@prisma/extension-accelerate';
+import { PrismaClient } from '../generated/prisma/client.js';
 
-// Extend NodeJS.Global to include a typed prisma property
-declare global {
-  // Use 'any' to avoid type errors with extended Prisma client
-  var prisma: any;
-}
+const globalForPrisma = global as unknown as {
+  prisma: PrismaClient;
+};
 
-let prisma: any;
+const prisma = globalForPrisma.prisma || new PrismaClient().$extends(withAccelerate());
 
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  // Prevent multiple instances in development with hot reloading
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
-}
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-export { prisma };
+export default prisma;

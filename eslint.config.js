@@ -18,7 +18,7 @@ export default defineConfig([
   },
   { files: ['**/*.json'], plugins: { json }, language: 'json/json', extends: ['json/recommended'] },
   {
-    ignores: ['build/**', 'public/build/**', '.cache/**', 'node_modules/**'],
+    ignores: ['build/**', '.react-router/**', 'public/build/**', '.cache/**', 'node_modules/**'],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -116,7 +116,7 @@ export default defineConfig([
       'no-multiple-empty-lines': ['error', { max: 1 }],
       'no-shadow': ['error'],
       'no-trailing-spaces': ['error'],
-      'no-unused-vars': ['warn'],
+      'no-unused-vars': ['warn', { args: 'none' }],
       'no-useless-concat': 'error',
       'prefer-const': 'error',
       'prefer-template': 'error',
