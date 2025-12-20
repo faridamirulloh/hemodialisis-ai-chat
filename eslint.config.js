@@ -1,22 +1,27 @@
 import js from '@eslint/js';
 import json from '@eslint/json';
 import tsParser from '@typescript-eslint/parser';
-import { defineConfig } from 'eslint/config';
-import prettier from 'eslint-config-prettier';
+import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import prettierPlugin from 'eslint-plugin-prettier';
 import pluginReact from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default defineConfig([
-  { files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'], plugins: { js }, extends: ['js/recommended'] },
+export default [
+  { files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'] },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
-  { files: ['**/*.json'], plugins: { json }, language: 'json/json', extends: ['json/recommended'] },
+  {
+    files: ['**/*.json'],
+    plugins: { json },
+    language: 'json/json',
+    ...json.configs.recommended,
+  },
   {
     ignores: ['build/**', '.react-router/**', 'public/build/**', '.cache/**', 'node_modules/**'],
   },
@@ -41,7 +46,7 @@ export default defineConfig([
       'jsx-a11y': jsxA11y,
       import: importPlugin,
       '@typescript-eslint': tseslint,
-      prettier,
+      prettier: prettierPlugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -49,24 +54,23 @@ export default defineConfig([
       ...pluginReact.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules,
-      ...prettier.rules,
+      ...prettierConfig.rules,
 
-      // prettier rules
-      // 'prettier/prettier': [
-      //   'warn',
-      //   {
-      //     arrowParens: 'always',
-      //     bracketSameLine: true,
-      //     bracketSpacing: true,
-      //     endOfLine: 'auto',
-      //     printWidth: 120,
-      //     semi: true,
-      //     singleQuote: true,
-      //     tabWidth: 2,
-      //     trailingComma: 'all',
-      //     useTabs: false,
-      //   },
-      // ],
+      'prettier/prettier': [
+        'warn',
+        {
+          arrowParens: 'always',
+          bracketSameLine: true,
+          bracketSpacing: true,
+          endOfLine: 'auto',
+          printWidth: 120,
+          semi: true,
+          singleQuote: true,
+          tabWidth: 2,
+          trailingComma: 'all',
+          useTabs: false,
+        },
+      ],
 
       'import/order': [
         'error',
@@ -93,7 +97,7 @@ export default defineConfig([
       // react rules
       'react/no-array-index-key': ['warn'],
       'react/no-unknown-property': 'off',
-      'react/prop-types': 'off', // Disabled due to TypeScript usage
+      'react/prop-types': 'off',
       'react/react-in-jsx-scope': ['error'],
       'react/jsx-uses-react': ['error'],
       'react/self-closing-comp': [
@@ -127,4 +131,4 @@ export default defineConfig([
       },
     },
   },
-]);
+];

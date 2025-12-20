@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Route } from './+types/home';
 import HomePage from '~/contents/home/HomePage';
-import { homeAction, homeLoader } from '~/loadersActions/home';
+import { homeAction, homeLoader } from '~/services/homeServices';
 
 export function meta(args: Route.MetaArgs) {
   return [

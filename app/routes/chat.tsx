@@ -1,8 +1,7 @@
 import React from 'react';
 import type { Route } from './+types/chat';
-import ChatRoom from '~/contents/chatRoom/ChatRoom';
+import ChatPage from '~/contents/chat/ChatPage';
 
-// eslint-disable-next-line no-unused-vars
 export function meta(args: Route.MetaArgs) {
   return [
     { title: 'Hemodialysis Chat' },
@@ -11,5 +10,5 @@ export function meta(args: Route.MetaArgs) {
 }
 
 export default function Chat() {
-  return <ChatRoom />;
+  return <ChatPage />;
 }

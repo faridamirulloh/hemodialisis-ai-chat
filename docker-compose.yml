@@ -1,0 +1,28 @@
+services:
+  app:
+    image: hemodialisis-app:latest
+    ports:
+      - '9999:3000'
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/hemodialisis?schema=public
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hemodialisis
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d hemodialisis']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

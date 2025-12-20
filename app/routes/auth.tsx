@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Route } from './+types/auth';
 import AuthPage from '~/contents/auth/AuthPage';
-import { authAction } from '~/loadersActions/auth';
+import { authAction } from '~/services/authServices';
 
 export function meta(args: Route.MetaArgs) {
   return [{ title: 'Login' }, { name: 'description', content: 'Selamat Datang di AI Chat Untuk Hemodialysis!' }];
