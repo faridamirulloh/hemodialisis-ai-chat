@@ -11,7 +11,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -35,9 +34,21 @@ model Chat {
 }
 
 model Record {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  content     Json
-  createdAt   DateTime @default(now())
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  date             DateTime @default(now())
+  symptoms         Json     @default("[]") // Array of { name: string, severity: 'low' | 'medium' | 'critical' }
+  dialysisSchedule Json?    // { date: DateTime, duration: number, type: string, location?: string }
+  labResults       Json?    // Array of { testName: string, value: number, unit: string, normalRange: string }
+  bloodPressure    Json?    // { systolic: number, diastolic: number, pulse?: number }
+  weight           Float?   // in kg
+  fluidIntake      Float?   // in ml
+  dietNotes        String?  // Food/drink notes
+  medications      Json?    // Array of { name: string, dosage: string, time: string }
+  note             String?  // General notes
+  mood             String?  // 'good' | 'neutral' | 'bad'
+  category         String   @default("general") // general, dialysis, lab, symptoms
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

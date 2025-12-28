@@ -1,0 +1,227 @@
+.analysisPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 500px;
+  max-width: 100vw;
+  height: 100vh;
+  background: white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .analysisPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(90deg, #059669, #0891b2);
+    color: white;
+
+    .analysisPanelTitle {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .aiIcon {
+        font-size: 1.5rem;
+      }
+
+      h4 {
+        margin: 0;
+        color: white;
+      }
+    }
+
+    .analysisPanelActions {
+      display: flex;
+      gap: 0.25rem;
+
+      button {
+        color: white;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      }
+    }
+  }
+
+  .analysisPanelContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+
+    .analysisLoading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      gap: 1rem;
+    }
+
+    .analysisError {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+    }
+
+    .analysisSection {
+      margin-bottom: 2rem;
+
+      .analysisSectionHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+
+        button {
+          color: #6b7280;
+          font-size: 0.75rem;
+
+          &:hover {
+            color: #059669;
+          }
+        }
+      }
+
+      h5 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        color: #059669;
+        font-size: 1rem;
+      }
+
+      .analysisText {
+        color: #374151;
+        line-height: 1.7;
+        font-size: 0.95rem;
+        white-space: pre-line;
+      }
+    }
+
+    .recommendationsList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #f0fdf4;
+        border-radius: 8px;
+        border-left: 3px solid #059669;
+
+        .recNumber {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          min-width: 24px;
+          background: #059669;
+          color: white;
+          border-radius: 50%;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .recText {
+          flex: 1;
+          color: #374151;
+          line-height: 1.5;
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  // Large desktop - even wider
+  @media (min-width: 1440px) {
+    width: 580px;
+  }
+
+  // Tablet
+  @media (max-width: 768px) {
+    width: 100vw;
+    top: auto;
+    bottom: 0;
+    height: 80vh;
+    max-height: 80vh;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+
+    .analysisPanelHeader {
+      border-radius: 20px 20px 0 0;
+      padding: 0.75rem 1rem;
+
+      // Handle bar indicator for mobile
+      &::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 2px;
+      }
+    }
+
+    .analysisPanelContent {
+      padding: 1rem;
+    }
+  }
+
+  // Mobile
+  @media (max-width: 480px) {
+    height: 85vh;
+    max-height: 85vh;
+
+    .analysisPanelContent {
+      padding: 0.75rem;
+
+      .analysisSection {
+        margin-bottom: 1.5rem;
+
+        h5 {
+          font-size: 0.9rem;
+        }
+
+        .analysisText {
+          font-size: 0.875rem;
+        }
+      }
+
+      .recommendationsList li {
+        padding: 0.6rem;
+
+        .recText {
+          font-size: 0.85rem;
+        }
+      }
+    }
+  }
+}
+
+// Analysis button in header
+.analyzeButton {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+  }
+}

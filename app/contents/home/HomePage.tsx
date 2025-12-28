@@ -1,22 +1,20 @@
 import React from 'react';
-import { MessageOutlined } from '@ant-design/icons';
+import { MessageOutlined, LogoutOutlined } from '@ant-design/icons';
 import { Button, Image, Typography } from 'antd';
-import { Form, Link, useLoaderData } from 'react-router';
+import { Link } from 'react-router';
 import styles from './HomePage.module.scss';
+import { useAuth } from '~/contexts/AuthContext';
 
 const HomePage = () => {
-  const data = useLoaderData();
-  const isLoggedIn = !!data?.user;
+  const { isAuthenticated, user, logout } = useAuth();
 
   return (
     <div className={styles.homeContainer}>
       <div className={styles.heroAction}>
-        {isLoggedIn ? (
-          <Form method="post">
-            <Button type="primary" danger size="large" htmlType="submit">
-              Logout
-            </Button>
-          </Form>
+        {isAuthenticated ? (
+          <Button type="primary" danger size="large" icon={<LogoutOutlined />} onClick={logout}>
+            Logout
+          </Button>
         ) : (
           <Link to="/auth">
             <Button type="primary" size="large">
@@ -27,8 +25,8 @@ const HomePage = () => {
       </div>
       <div className={styles.heroSection}>
         <div className={styles.heroContent}>
-          {isLoggedIn && (
-            <Typography.Title className={styles.userWelcome}>Selamat Datang, {data.user.name}!</Typography.Title>
+          {isAuthenticated && (
+            <Typography.Title className={styles.userWelcome}>Selamat Datang, {user?.name}!</Typography.Title>
           )}
           <Image preview={false} src="/logo.png" />
           <Typography.Title className={styles.heroTitle}>Asisten AI Hemodialisis</Typography.Title>

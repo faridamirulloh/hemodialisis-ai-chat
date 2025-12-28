@@ -1,0 +1,199 @@
+.timelineView {
+  .timelineGroup {
+    margin-bottom: 2rem;
+
+    .dateHeader {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e5e7eb;
+
+      .dateIcon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #059669, #0891b2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .dateText {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+      }
+    }
+
+    .timelineItems {
+      position: relative;
+      padding-left: 1.5rem;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 17px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e5e7eb;
+      }
+
+      .timelineItem {
+        position: relative;
+        margin-bottom: 1rem;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: -1.5rem;
+          top: 1rem;
+          width: 10px;
+          height: 10px;
+          background: #059669;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 0 0 2px #e5e7eb;
+          transform: translateX(-3px);
+        }
+
+        &.critical::before {
+          background: #dc2626;
+        }
+
+        &.medium::before {
+          background: #f59e0b;
+        }
+
+        &.low::before {
+          background: #10b981;
+        }
+      }
+    }
+  }
+}
+
+// Record Card Styles (shared with Timeline)
+.recordCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+
+    .cardDate {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .categoryBadge {
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+
+      &.general {
+        background: #f3f4f6;
+        color: #6b7280;
+      }
+      &.dialysis {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+      &.lab {
+        background: #ede9fe;
+        color: #7c3aed;
+      }
+      &.symptoms {
+        background: #fef3c7;
+        color: #d97706;
+      }
+    }
+  }
+
+  .cardContent {
+    .symptomsPreview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+
+      .symptomChip {
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+
+        &.low {
+          background: #d1fae5;
+          color: #065f46;
+        }
+        &.medium {
+          background: #fef3c7;
+          color: #92400e;
+        }
+        &.critical {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+      }
+    }
+
+    .cardNote {
+      font-size: 0.875rem;
+      color: #374151;
+      line-height: 1.4;
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .cardStats {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+    }
+  }
+
+  .cardActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+
+    button {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      height: auto;
+    }
+  }
+}

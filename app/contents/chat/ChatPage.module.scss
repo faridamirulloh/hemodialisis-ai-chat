@@ -15,7 +15,7 @@
     justify-content: space-between;
     background: linear-gradient(90deg, #059669, #0891b2);
     color: white;
-    padding: 1rem 2rem;
+    padding: 0.05rem 2rem;
     flex-wrap: wrap;
     gap: 0.5rem;
 
@@ -102,6 +102,19 @@
           opacity: 0.5;
           text-align: right;
           margin-top: 0.25rem;
+        }
+
+        .skipButton {
+          margin-top: 0.5rem;
+          font-size: 0.75rem;
+          color: #6b7280;
+          padding: 0.25rem 0.5rem;
+          height: auto;
+
+          &:hover {
+            color: #059669;
+            background: rgba(5, 150, 105, 0.1);
+          }
         }
       }
     }

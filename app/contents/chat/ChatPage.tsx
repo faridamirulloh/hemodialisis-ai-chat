@@ -5,28 +5,53 @@ import {
   HeartOutlined,
   ExclamationCircleOutlined,
   BulbOutlined,
+  FastForwardOutlined,
+  UserOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 import { Button, Input } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router';
 import { v7 as uuidv7 } from 'uuid';
 import styles from './ChatPage.module.scss';
+import type { TextAreaRef } from 'antd/es/input/TextArea';
 import type { ChatMessage } from '~/types/chat';
 import Typewriter from '~/components/chat/Typewriter';
 import { QuickPrompts, WelcomeMessage } from '~/constant/chatConstant';
+import { useAuth } from '~/contexts/AuthContext';
 import { postMessage } from '~/services/chatServices';
 
 const ChatPage = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [sessionId, setSessionId] = useState<string>(uuidv7());
   const [messages, setMessages] = useState<ChatMessage[]>([WelcomeMessage]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAssistantMessageId, setLastAssistantMessageId] = useState<string | null>(null);
+  const [isTypewriterComplete, setIsTypewriterComplete] = useState(false);
+  const [isTypewriterSkipped, setIsTypewriterSkipped] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<TextAreaRef | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto scroll during typewriter animation
+  const handleTypewriterProgress = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleTypewriterComplete = () => {
+    setIsTypewriterComplete(true);
+    inputRef.current?.focus();
+  };
+
+  const handleSkipTypewriter = () => {
+    setIsTypewriterSkipped(true);
+  };
 
   const handlePostMessage = async (text: string) => {
     setError(null);
@@ -42,11 +67,16 @@ const ChatPage = () => {
     setMessages(newMessages);
     setInput('');
     setLoading(true);
+    setIsTypewriterComplete(false);
+    setIsTypewriterSkipped(false);
 
     const reply = await postMessage(newMsg, sessionId);
     setMessages(newMessages.concat(reply));
     setLastAssistantMessageId(reply.id);
     setLoading(false);
+
+    // Auto focus after sending
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const onSubmit = (e?: React.FormEvent) => {
@@ -65,6 +95,9 @@ const ChatPage = () => {
     setMessages([WelcomeMessage]);
     setLastAssistantMessageId(null);
     setInput('');
+    setIsTypewriterComplete(false);
+    setIsTypewriterSkipped(false);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   return (
@@ -79,10 +112,25 @@ const ChatPage = () => {
         </div>
 
         <div className={styles.headerControls}>
-          {/* <Button size="large">Riwayat Chat</Button> */}
+          {isAuthenticated && (
+            <Button size="large" onClick={() => navigate('/records')}>
+              Riwayat Catatan
+            </Button>
+          )}
           <Button size="large" onClick={handleNewChat}>
             Chat Baru
           </Button>
+          {isAuthenticated ? (
+            <Button size="large" icon={<LogoutOutlined />} onClick={logout}>
+              {user?.name || 'Keluar'}
+            </Button>
+          ) : (
+            <Link to="/auth">
+              <Button size="large" type="primary" icon={<UserOutlined />}>
+                Masuk
+              </Button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -99,8 +147,27 @@ const ChatPage = () => {
               <div className={styles.messageBox}>
                 <div className={styles.messageRole}>{m.role.toUpperCase()}</div>
                 <div className={styles.messageText}>
-                  {m.role === 'assistant' && m.id === lastAssistantMessageId ? <Typewriter text={m.text} /> : m.text}
+                  {m.role === 'assistant' && m.id === lastAssistantMessageId ? (
+                    <Typewriter
+                      text={m.text}
+                      onProgress={handleTypewriterProgress}
+                      onComplete={handleTypewriterComplete}
+                      isSkipped={isTypewriterSkipped}
+                    />
+                  ) : (
+                    m.text
+                  )}
                 </div>
+                {m.role === 'assistant' && m.id === lastAssistantMessageId && !isTypewriterComplete && (
+                  <Button
+                    size="small"
+                    type="text"
+                    onClick={handleSkipTypewriter}
+                    className={styles.skipButton}
+                    icon={<FastForwardOutlined />}>
+                    Skip
+                  </Button>
+                )}
                 <div className={styles.timestamp}>{new Date(m.createdAt).toLocaleString()}</div>
               </div>
             </motion.div>
@@ -148,6 +215,7 @@ const ChatPage = () => {
         <form onSubmit={onSubmit} className={styles.inputForm}>
           <label htmlFor="chat-input">Pesan</label>
           <Input.TextArea
+            ref={inputRef}
             id="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
