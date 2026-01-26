@@ -1,6 +1,6 @@
 import { data } from 'react-router';
 import type { Route } from './+types/records';
-import type { HealthRecord } from '~/types/record';
+import type { Symptom } from '~/types/record';
 import prisma from '~/lib/prisma.server';
 
 // GET - Fetch records with filtering
@@ -54,8 +54,9 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Filter by severity if specified (needs post-processing since symptoms is JSON)
     let filteredRecords = records;
     if (severity) {
-      filteredRecords = records.filter((record: HealthRecord) => {
-        return record.symptoms?.some((s) => s.severity === severity);
+      filteredRecords = records.filter((record) => {
+        const symptoms = record.symptoms as Symptom[] | null;
+        return symptoms?.some((s) => s.severity === severity);
       });
     }
 

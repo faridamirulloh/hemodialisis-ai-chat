@@ -5,26 +5,7 @@ services:
     ports:
       - '9999:3000'
     environment:
-      - DATABASE_URL=postgresql://user:password@db-hemodialysis:5432/hemodialisis?schema=public
+      - DATABASE_URL=postgresql://postgres:a@192.168.1.99:5432/hemodialisis?schema=public
+      - SESSION_SECRET=aridevianto_super_long_random_secret_@123
+      - N8N_CHAT_URL=http://192.168.1.99:5678/webhook/bf4dd093-bb02-472c-9454-7ab9af97bd1d
       - NODE_ENV=production
-    depends_on:
-      db-hemodialysis:
-        condition: service_healthy
-
-  db-hemodialysis:
-    container_name: db-hemodialysis
-    image: postgres:18-alpine
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=hemodialisis
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d hemodialisis']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:

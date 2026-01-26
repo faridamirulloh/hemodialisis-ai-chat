@@ -46,7 +46,7 @@ export interface Medication {
 export interface HealthRecord {
   id: string;
   userId: string;
-  date: string;
+  date: Date;
   symptoms: Symptom[];
   dialysisSchedule?: DialysisSchedule;
   labResults?: LabResult[];
@@ -58,8 +58,8 @@ export interface HealthRecord {
   note?: string;
   mood?: MoodType;
   category: RecordCategory;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface RecordFilter {

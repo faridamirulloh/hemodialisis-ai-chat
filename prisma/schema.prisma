@@ -14,41 +14,61 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  name        String
-  phoneNumber String?  @unique
-  data        Json?
-  chats       Chat[]
-  records     Record[]
-  createdAt   DateTime @default(now())
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  name         String
+  data         Json?
+  records      Record[]
+  chatSessions ChatSession[] @relation("chat_sessions")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@map("users")
 }
 
-model Chat {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  content     Json
-  createdAt   DateTime @default(now())
+model ChatSession {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  title         String?  // Optional: first message or date
+  user          User     @relation("chat_sessions", fields: [userId], references: [id])
+  chatHistories ChatHistory[] @relation("chat_histories")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("chat_sessions")
+}
+
+model ChatHistory {
+  id            Int   @id @default(autoincrement())
+  sessionId     String   @map("session_id")
+  message       Json     // { type: 'human' | 'ai', content: string }
+  chatSession   ChatSession @relation("chat_histories", fields: [sessionId], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@map("chat_histories")
 }
 
 model Record {
   id               String   @id @default(uuid())
-  userId           String
+  userId           String   @map("user_id")
   user             User     @relation(fields: [userId], references: [id])
   date             DateTime @default(now())
   symptoms         Json     @default("[]") // Array of { name: string, severity: 'low' | 'medium' | 'critical' }
-  dialysisSchedule Json?    // { date: DateTime, duration: number, type: string, location?: string }
-  labResults       Json?    // Array of { testName: string, value: number, unit: string, normalRange: string }
-  bloodPressure    Json?    // { systolic: number, diastolic: number, pulse?: number }
+  dialysisSchedule Json?    @map("dialysis_schedule") // { date: DateTime, duration: number, type: string, location?: string }
+  labResults       Json?    @map("lab_results") // Array of { testName: string, value: number, unit: string, normalRange: string }
+  bloodPressure    Json?    @map("blood_pressure") // { systolic: number, diastolic: number, pulse?: number }
   weight           Float?   // in kg
-  fluidIntake      Float?   // in ml
-  dietNotes        String?  // Food/drink notes
+  fluidIntake      Float?   @map("fluid_intake") // in ml
+  dietNotes        String?  @map("diet_notes") // Food/drink notes
   medications      Json?    // Array of { name: string, dosage: string, time: string }
   note             String?  // General notes
   mood             String?  // 'good' | 'neutral' | 'bad'
   category         String   @default("general") // general, dialysis, lab, symptoms
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("records")
 }

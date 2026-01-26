@@ -140,8 +140,8 @@ const RecordsPage: React.FC = () => {
             className={styles.backButton}
           />
           <div>
-            <h1 className={styles.title}>Riwayat Catatan</h1>
-            <p className={styles.subtitle}>Catatan kesehatan hemodialisis Anda</p>
+            <h1 className={styles.title}>Catatan Kesehatan</h1>
+            <p className={styles.subtitle}>Catatan Harian Kondisi Kesehatan Anda</p>
           </div>
         </div>
 

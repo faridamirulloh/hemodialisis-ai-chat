@@ -13,7 +13,11 @@ export async function authAction({ request }: { request: Request }) {
       return { error: 'Harap isi semua data!' };
     }
 
-    return await signup({ email, name, password });
+    const result = await signup({ email, name, password });
+    if (result && 'error' in result) {
+      return { error: result.error };
+    }
+    return result;
   } else {
     const response = await login({ email, password });
     if (!response) {

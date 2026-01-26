@@ -3,10 +3,7 @@ import type { Route } from './+types/records';
 import RecordsPage from '~/contents/records/RecordsPage';
 
 export function meta(args: Route.MetaArgs) {
-  return [
-    { title: 'Riwayat Catatan - Hemodialysis' },
-    { name: 'description', content: 'Riwayat catatan kesehatan hemodialisis Anda' },
-  ];
+  return [{ title: 'Catatan Kesehatan - Hemodialysis' }, { name: 'description', content: 'Catatan kesehatan Anda' }];
 }
 
 export default function Records() {

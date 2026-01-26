@@ -1,33 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { Form, Input, Button, Typography, message } from 'antd';
-import { Link, useNavigate } from 'react-router';
+import { Link, useSubmit, useActionData, useNavigation } from 'react-router';
 import styles from './AuthPage.module.scss';
-import { useAuth } from '~/contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
 const AuthPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const submit = useSubmit();
+  const actionData = useActionData<{ error?: string }>();
+  const navigation = useNavigation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [loading, setLoading] = useState(false);
+  const loading = navigation.state === 'submitting';
+
+  // Show error message from server
+  useEffect(() => {
+    if (actionData?.error) {
+      message.error(actionData.error);
+    }
+  }, [actionData]);
 
   const handleSubmit = async (values: { name?: string; email: string; password: string }) => {
-    setLoading(true);
-    try {
-      const success = await login(values.email, values.password);
-      if (success) {
-        message.success('Login berhasil!');
-        navigate('/');
-      } else {
-        message.error('Login gagal. Coba lagi.');
-      }
-    } catch {
-      message.error('Terjadi kesalahan. Coba lagi.');
-    } finally {
-      setLoading(false);
+    const formData = new FormData();
+    formData.append('mode', mode);
+    formData.append('email', values.email);
+    formData.append('password', values.password);
+    if (mode === 'signup') {
+      formData.append('name', values.name || '');
     }
+    submit(formData, { method: 'post' });
   };
 
   return (
@@ -72,7 +73,7 @@ const AuthPage: React.FC = () => {
           </Form.Item>
 
           <Button type="primary" htmlType="submit" block loading={loading}>
-            {mode === 'signup' ? 'Daftar' : 'Login'}
+            {mode === 'signup' ? 'Daftar' : 'Masuk'}
           </Button>
 
           <div className={styles.altLink}>
@@ -80,7 +81,7 @@ const AuthPage: React.FC = () => {
               <Text>
                 Sudah memiliki akun?{' '}
                 <Link to="#" onClick={() => setMode('login')}>
-                  Login
+                  Masuk
                 </Link>
               </Text>
             ) : (
