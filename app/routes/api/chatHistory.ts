@@ -51,7 +51,15 @@ export async function loader({ request }: Route.LoaderArgs) {
       },
     });
 
-    return data(sessions, { status: 200 });
+    // Map to include sessionId for frontend compatibility
+    const sessionsWithSessionId = sessions.map((s) => ({
+      id: s.id,
+      sessionId: s.id, // sessionId is the same as id
+      title: s.title,
+      createdAt: s.createdAt.toISOString(),
+    }));
+
+    return data(sessionsWithSessionId, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch chat sessions:', error);
     return data({ error: 'Failed to fetch chat sessions' }, { status: 500 });

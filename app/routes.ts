@@ -7,6 +7,7 @@ export default [
   route('records', 'routes/records.tsx'),
   route('api/user', 'routes/api/user.ts'),
   route('api/chat', 'routes/api/chat.ts'),
+  route('api/chat-test', 'routes/api/chatTest.ts'),
   route('api/chat-history', 'routes/api/chatHistory.ts'),
   route('api/records', 'routes/api/records.ts'),
   route('api/analyze', 'routes/api/analyze.ts'),

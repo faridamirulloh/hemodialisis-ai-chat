@@ -2,12 +2,12 @@ import { v7 as uuidv7 } from 'uuid';
 import type { ChatMessage } from '~/types/chat';
 import { Chat } from '~/constant/api';
 
-export async function postMessage(newMsg: ChatMessage, sessionId: string) {
+export async function postMessage(newMsg: ChatMessage, sessionId: string, userId: string = 'test', isTest?: boolean) {
   try {
-    const resp = await fetch(Chat.POST.Chat, {
+    const resp = await fetch(isTest ? Chat.POST.ChatTest : Chat.POST.Chat, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: newMsg.text, sessionId }),
+      body: JSON.stringify({ message: newMsg.text, sessionId, userId }),
     });
 
     if (!resp.ok) throw new Error(`Server responded ${resp.status}`);

@@ -20,7 +20,8 @@ import type { TextAreaRef } from 'antd/es/input/TextArea';
 import type { ChatMessage, ChatSessionSummary } from '~/types/chat';
 import ChatHistoryDrawer from '~/components/chat/ChatHistoryDrawer';
 import Typewriter from '~/components/chat/Typewriter';
-import { QuickPrompts, WelcomeMessage } from '~/constant/chatConstant';
+import { QuickPrompts, welcomeMessage } from '~/constant/chatConstant';
+import { DEV_MODE } from '~/constant/constant';
 import { useAuth } from '~/contexts/AuthContext';
 import { generateKeyEl } from '~/helper/stringHelper';
 import { postMessage } from '~/services/chatServices';
@@ -29,13 +30,14 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const [sessionId, setSessionId] = useState<string>(uuidv7());
-  const [messages, setMessages] = useState<ChatMessage[]>([WelcomeMessage]);
+  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage(new Date())]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAssistantMessageId, setLastAssistantMessageId] = useState<string | null>(null);
   const [isTypewriterComplete, setIsTypewriterComplete] = useState(false);
   const [isTypewriterSkipped, setIsTypewriterSkipped] = useState(false);
+  const [isTestAPI, setTestAPI] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<TextAreaRef | null>(null);
 
@@ -106,7 +108,6 @@ const ChatPage = () => {
           setSessionId(selectedSessionId);
           setMessages(loadedMessages);
           setLastAssistantMessageId(null);
-          setSessionSaved(true);
           setIsHistoryOpen(false);
         }
       }
@@ -150,8 +151,7 @@ const ChatPage = () => {
     if (!sessionSaved && isAuthenticated) {
       saveChatSession(text.substring(0, 100));
     }
-
-    const reply = await postMessage(newMsg, sessionId);
+    const reply = await postMessage(newMsg, sessionId, user?.id, isTestAPI);
     setMessages(newMessages.concat(reply));
     setLastAssistantMessageId(reply.id);
     setLoading(false);
@@ -173,7 +173,7 @@ const ChatPage = () => {
 
   const handleNewChat = () => {
     setSessionId(uuidv7());
-    setMessages([WelcomeMessage]);
+    setMessages([welcomeMessage(new Date())]);
     setLastAssistantMessageId(null);
     setInput('');
     setIsTypewriterComplete(false);
@@ -189,7 +189,7 @@ const ChatPage = () => {
           <MessageOutlined className={styles.iconCircle} style={{ fontSize: 30 }} />
           <div>
             <h1 className={styles.title}>Hemodialysis Support Chat</h1>
-            <p className={styles.subtitle}>Teman AI khusus Hemodialysis</p>
+            <p className={styles.subtitle}>Teman AI Khusus Pasien Hemodialisis</p>
           </div>
         </div>
 
@@ -282,11 +282,11 @@ const ChatPage = () => {
               trigger={['click']}
               placement="topLeft"
               menu={{
-                items: QuickPrompts.map((group) => ({
-                  key: group.name,
+                items: QuickPrompts.map((group, groupIndex) => ({
+                  key: generateKeyEl(`group-${groupIndex}`, group.name),
                   label: group.name,
                   children: group.items.map((item, i) => ({
-                    key: generateKeyEl(group.name, i),
+                    key: generateKeyEl(`item-${groupIndex}-${i}`),
                     label: item,
                     onClick: () => handleQuick(item),
                   })),
@@ -298,6 +298,15 @@ const ChatPage = () => {
                 <CaretRightOutlined />
               </Button>
             </Dropdown>
+            {DEV_MODE && (
+              <Button
+                color={isTestAPI ? 'blue' : 'default'}
+                variant={isTestAPI ? 'filled' : 'outlined'}
+                onClick={() => setTestAPI(!isTestAPI)}
+                style={{ color: isTestAPI ? 'blue' : 'lightgray' }}>
+                Test API
+              </Button>
+            )}
           </div>
           {error ? (
             <div className={styles.errorText}>

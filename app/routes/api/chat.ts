@@ -3,8 +3,12 @@ import { Chat } from '~/constant/api';
 export async function action({ request }: { request: Request }) {
   const body = await request.json();
 
+  return sendChat(body, Chat.POST.Prompt);
+}
+
+export async function sendChat(body: any, api: string) {
   try {
-    const reply = await fetch(Chat.POST.Prompt, {
+    const reply = await fetch(api, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
