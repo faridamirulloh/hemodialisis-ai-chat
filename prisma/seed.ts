@@ -87,13 +87,13 @@ async function seedRecords() {
   console.log('Seeding 10 random records...');
 
   // First, ensure we have a demo user
-  let user = await prisma.user.findFirst({ where: { email: 'demo@example.com' } });
+  let user = await prisma.user.findFirst({ where: { email: 'a@a.com' } });
   if (!user) {
     user = await prisma.user.create({
       data: {
-        email: 'demo@example.com',
-        password: 'demo123',
-        name: 'Demo User',
+        email: 'a@a.com',
+        password: 'a',
+        name: 'a',
       },
     });
     console.log('Created demo user:', user.id);

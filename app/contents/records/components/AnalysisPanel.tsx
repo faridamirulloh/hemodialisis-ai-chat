@@ -11,6 +11,8 @@ import { Button, Spin, Typography, Empty } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './AnalysisPanel.module.scss';
 import Typewriter from '~/components/chat/Typewriter';
+import { useAuth } from '~/contexts/AuthContext';
+import { formatBoldText, generateKeyEl } from '~/helper/stringHelper';
 import { analyzeHealth, type HealthAnalysis } from '~/services/recordServices';
 
 const { Title, Text } = Typography;
@@ -21,6 +23,7 @@ interface AnalysisPanelProps {
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<HealthAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +32,12 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
   const hasInitialLoad = useRef(false);
 
   const handleAnalyze = async () => {
+    if (!user) return;
+
     setLoading(true);
     setError(null);
     try {
-      const result = await analyzeHealth();
+      const result = await analyzeHealth(user.id);
       setAnalysis(result);
       setIsTypewriterComplete(false);
       setIsTypewriterSkipped(false);
@@ -50,6 +55,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
       hasInitialLoad.current = true;
       handleAnalyze();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   // Detect mobile for responsive animation
@@ -144,12 +150,12 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
                   <ul className={styles.recommendationsList}>
                     {analysis.recommendations.map((rec, index) => (
                       <motion.li
-                        key={`rec-${index}-${rec.slice(0, 20)}`}
+                        key={generateKeyEl(rec.slice(0, 20), index)}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.15 }}>
                         <span className={styles.recNumber}>{index + 1}</span>
-                        <span className={styles.recText}>{rec}</span>
+                        <span className={styles.recText}>{formatBoldText(rec)}</span>
                       </motion.li>
                     ))}
                   </ul>

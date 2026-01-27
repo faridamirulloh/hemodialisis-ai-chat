@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { CloseOutlined, DeleteOutlined, HistoryOutlined, MessageOutlined } from '@ant-design/icons';
+import { CloseOutlined, DeleteOutlined, HistoryOutlined, MessageOutlined, RobotOutlined } from '@ant-design/icons';
 import { Button, Popconfirm, Spin } from 'antd';
 import { Link } from 'react-router';
 import styles from './ChatHistoryDrawer.module.scss';
@@ -15,6 +15,9 @@ interface ChatHistoryDrawerProps {
   onSelectSession: (sessionId: string) => void;
   onDeleteSession?: (sessionId: string) => void;
 }
+
+// Check if session is an AI health analysis session
+const isAnalysisSession = (sessionId: string) => sessionId.startsWith('health-analysis-');
 
 const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
   isOpen,
@@ -110,44 +113,54 @@ const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
             </div>
           ) : (
             <div className={styles.sessionList}>
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`${styles.sessionItem} ${currentSessionId === session.sessionId ? styles.active : ''}`}>
+              {sessions.map((session) => {
+                const isAnalysis = isAnalysisSession(session.sessionId);
+                return (
                   <div
-                    className={styles.sessionContent}
-                    onClick={() => onSelectSession(session.sessionId)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && onSelectSession(session.sessionId)}>
-                    <div className={styles.sessionTitle}>{session.title || 'Chat tanpa judul'}</div>
-                    <div className={styles.sessionDate}>{formatDate(session.createdAt)}</div>
+                    key={session.id}
+                    className={`${styles.sessionItem} ${currentSessionId === session.sessionId ? styles.active : ''} ${isAnalysis ? styles.analysis : ''}`}>
+                    <div
+                      className={styles.sessionContent}
+                      onClick={() => onSelectSession(session.sessionId)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyPress={(e) => e.key === 'Enter' && onSelectSession(session.sessionId)}>
+                      <div className={styles.sessionIcon}>
+                        {isAnalysis ? <RobotOutlined /> : <MessageOutlined />}
+                      </div>
+                      <div className={styles.sessionInfo}>
+                        <div className={styles.sessionTitle}>
+                          {isAnalysis ? 'Analisis Kesehatan AI' : session.title || 'Chat tanpa judul'}
+                        </div>
+                        <div className={styles.sessionDate}>{formatDate(session.createdAt)}</div>
+                      </div>
+                    </div>
+                    {onDeleteSession && (
+                      <Popconfirm
+                        title={isAnalysis ? 'Hapus analisis kesehatan?' : 'Hapus riwayat chat?'}
+                        description="Tindakan ini tidak dapat dibatalkan."
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          onDeleteSession(session.sessionId);
+                        }}
+                        onCancel={(e) => e?.stopPropagation()}
+                        okText="Hapus"
+                        cancelText="Batal"
+                        okButtonProps={{ danger: true }}>
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          className={styles.deleteButton}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Hapus"
+                        />
+                      </Popconfirm>
+                    )}
                   </div>
-                  {onDeleteSession && (
-                    <Popconfirm
-                      title="Hapus riwayat chat?"
-                      description="Tindakan ini tidak dapat dibatalkan."
-                      onConfirm={(e) => {
-                        e?.stopPropagation();
-                        onDeleteSession(session.sessionId);
-                      }}
-                      onCancel={(e) => e?.stopPropagation()}
-                      okText="Hapus"
-                      cancelText="Batal"
-                      okButtonProps={{ danger: true }}>
-                      <Button
-                        type="text"
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                        className={styles.deleteButton}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="Hapus chat"
-                      />
-                    </Popconfirm>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

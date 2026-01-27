@@ -65,13 +65,13 @@ export async function action({ request }: { request: Request }) {
 
     // Send to AI for analysis
     const aiPrompt = `Kamu adalah asisten kesehatan AI yang khusus membantu pasien hemodialisis. 
-Berikut adalah ringkasan data kesehatan pasien dari ${records.length} catatan terakhir:
+Berikut adalah ringkasan data kesehatan saya dari ${records.length} catatan terakhir:
 
 ${summary}
 
 Berdasarkan data di atas, berikan:
-1. Analisis kondisi kesehatan pasien secara keseluruhan (dalam 2-3 paragraf)
-2. 5 rekomendasi langkah nyata yang bisa dilakukan pasien untuk memperbaiki kesehatannya
+1. Analisis kondisi kesehatan saya secara keseluruhan (dalam 2-3 paragraf)
+2. 5 rekomendasi langkah nyata yang bisa saya lakukan untuk memperbaiki kesehatan saya
 
 Format respons dalam JSON:
 {
@@ -82,12 +82,10 @@ Format respons dalam JSON:
     const aiResponse = await fetch(Chat.POST.Prompt, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: aiPrompt, sessionId: 'health-analysis' }),
+      body: JSON.stringify({ message: aiPrompt, sessionId: `health-analysis-${userId}`, userId }),
     });
 
     const aiText = await aiResponse.text();
-
-    console.log(aiText);
 
     try {
       const aiData = JSON.parse(aiText);

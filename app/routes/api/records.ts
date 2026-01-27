@@ -77,23 +77,10 @@ export async function action({ request }: Route.ActionArgs) {
     try {
       const body = await request.json();
 
-      // Find a valid userId - use provided, find first user, or create demo user
-      let userId = body.userId;
+      // userId is required - user must be authenticated
+      const userId = body.userId;
       if (!userId) {
-        const firstUser = await prisma.user.findFirst();
-        if (firstUser) {
-          userId = firstUser.id;
-        } else {
-          // Create a demo user if none exists
-          const demoUser = await prisma.user.create({
-            data: {
-              email: 'demo@example.com',
-              password: 'demo123',
-              name: 'Demo User',
-            },
-          });
-          userId = demoUser.id;
-        }
+        return data({ error: 'userId is required' }, { status: 400 });
       }
 
       const record = await prisma.record.create({

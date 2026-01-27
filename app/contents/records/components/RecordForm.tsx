@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Modal, Form, Input, DatePicker, Select, InputNumber, Button, Row, Col, Divider, Tag } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PlusOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, DatePicker, Select, InputNumber, Button, Row, Col, Divider, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import styles from './RecordForm.module.scss';
+import { useAuth } from '~/contexts/AuthContext';
+import { generateKeyEl } from '~/helper/stringHelper';
 import { createRecord, updateRecord } from '~/services/recordServices';
 import {
   type HealthRecord,
@@ -45,16 +47,31 @@ const ACCESS_TYPE_OPTIONS = [
 const ALL_LAB_TESTS = Object.values(LAB_TEST_CATEGORIES).flat();
 
 const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuccess }) => {
+  const { user } = useAuth();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<Symptom[]>([]);
   const [labResults, setLabResults] = useState<LabResult[]>([]);
   const [selectedMood, setSelectedMood] = useState<MoodType | undefined>();
   const [customSymptom, setCustomSymptom] = useState('');
+  const [fieldsFromPrevious, setFieldsFromPrevious] = useState<Set<string>>(new Set());
+
+  // Remove field from previous data indicator when user changes value
+  const handleFieldChange = useCallback((fieldName: string) => {
+    setFieldsFromPrevious((prev) => {
+      if (prev.has(fieldName)) {
+        const newSet = new Set(prev);
+        newSet.delete(fieldName);
+        return newSet;
+      }
+      return prev;
+    });
+  }, []);
 
   useEffect(() => {
     if (visible) {
       if (record) {
+        // Editing existing record
         form.setFieldsValue({
           ...record,
           date: record.date ? dayjs(record.date) : dayjs(),
@@ -69,15 +86,60 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
         setSelectedSymptoms(record.symptoms || []);
         setLabResults(record.labResults || []);
         setSelectedMood(record.mood);
+        setFieldsFromPrevious(new Set());
       } else {
+        // Creating new record - fetch last record for defaults
         form.resetFields();
         form.setFieldsValue({ date: dayjs(), category: 'general' });
         setSelectedSymptoms([]);
         setLabResults([]);
         setSelectedMood(undefined);
+        setFieldsFromPrevious(new Set());
+
+        // Fetch last record to get default values for blood pressure and weight
+        if (user?.id) {
+          fetch(`/api/records?userId=${user.id}`)
+            .then((res) => res.json())
+            .then((records: HealthRecord[]) => {
+              if (records.length > 0) {
+                // Records are sorted by date desc, so first one is the latest
+                const lastRecord = records[0];
+                const prefilled: string[] = [];
+
+                if (lastRecord.weight) prefilled.push('weight');
+                if (lastRecord.fluidIntake) prefilled.push('fluidIntake');
+                if (lastRecord.bloodPressure?.systolic) prefilled.push('bloodPressure.systolic');
+                if (lastRecord.bloodPressure?.diastolic) prefilled.push('bloodPressure.diastolic');
+                if (lastRecord.bloodPressure?.pulse) prefilled.push('bloodPressure.pulse');
+
+                form.setFieldsValue({
+                  weight: lastRecord.weight,
+                  fluidIntake: lastRecord.fluidIntake,
+                  'bloodPressure.systolic': lastRecord.bloodPressure?.systolic,
+                  'bloodPressure.diastolic': lastRecord.bloodPressure?.diastolic,
+                  'bloodPressure.pulse': lastRecord.bloodPressure?.pulse,
+                });
+
+                setFieldsFromPrevious(new Set(prefilled));
+              }
+            })
+            .catch((err) => console.error('Failed to fetch last record:', err));
+        }
       }
     }
-  }, [visible, record, form]);
+  }, [visible, record, form, user?.id]);
+
+  // Helper to render label with "previous data" indicator icon
+  const renderLabel = (label: string, fieldName: string) => (
+    <>
+      {label}
+      {fieldsFromPrevious.has(fieldName) && (
+        <Tooltip title="Data dari catatan sebelumnya">
+          <HistoryOutlined style={{ marginLeft: 8, color: '#1890ff' }} />
+        </Tooltip>
+      )}
+    </>
+  );
 
   const handleSymptomToggle = (symptomName: string) => {
     const existing = selectedSymptoms.find((s) => s.name === symptomName);
@@ -153,8 +215,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
         dietNotes: values.dietNotes,
         note: values.note,
         mood: selectedMood,
-        // TODO: Get userId from auth context
-        userId: 'demo-user',
+        userId: user?.id,
       };
 
       if (record) {
@@ -278,18 +339,35 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="bloodPressure.systolic" label="Sistolik (mmHg)">
-                <InputNumber min={0} max={300} style={{ width: '100%' }} />
+              <Form.Item name="bloodPressure.systolic" label={renderLabel('Sistolik (mmHg)', 'bloodPressure.systolic')}>
+                <InputNumber
+                  min={0}
+                  max={300}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('bloodPressure.systolic')}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="bloodPressure.diastolic" label="Diastolik (mmHg)">
-                <InputNumber min={0} max={200} style={{ width: '100%' }} />
+              <Form.Item
+                name="bloodPressure.diastolic"
+                label={renderLabel('Diastolik (mmHg)', 'bloodPressure.diastolic')}>
+                <InputNumber
+                  min={0}
+                  max={200}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('bloodPressure.diastolic')}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="bloodPressure.pulse" label="Denyut Nadi (bpm)">
-                <InputNumber min={0} max={250} style={{ width: '100%' }} />
+              <Form.Item name="bloodPressure.pulse" label={renderLabel('Denyut Nadi (bpm)', 'bloodPressure.pulse')}>
+                <InputNumber
+                  min={0}
+                  max={250}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('bloodPressure.pulse')}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -300,13 +378,26 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="weight" label="Berat Badan (kg)">
-                <InputNumber min={0} max={300} step={0.1} style={{ width: '100%' }} />
+              <Form.Item name="weight" label={renderLabel('Berat Badan (kg)', 'weight')}>
+                <InputNumber
+                  defaultValue={0}
+                  min={0}
+                  max={300}
+                  step={0.1}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('weight')}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="fluidIntake" label="Asupan Cairan (ml)">
-                <InputNumber min={0} max={10000} step={100} style={{ width: '100%' }} />
+              <Form.Item name="fluidIntake" label={renderLabel('Asupan Cairan (ml/hari)', 'fluidIntake')}>
+                <InputNumber
+                  min={0}
+                  max={10000}
+                  step={100}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('fluidIntake')}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -342,7 +433,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
           </Divider>
 
           {labResults.map((result, index) => (
-            <Row key={index} gutter={8} align="middle" style={{ marginBottom: 8 }}>
+            <Row key={generateKeyEl(index)} gutter={8} align="middle" style={{ marginBottom: 8 }}>
               <Col span={7}>
                 <Select
                   placeholder="Nama Tes"

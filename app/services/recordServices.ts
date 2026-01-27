@@ -76,13 +76,13 @@ export interface HealthAnalysis {
   error?: string;
 }
 
-export async function analyzeHealth(userId?: string): Promise<HealthAnalysis> {
+export async function analyzeHealth(userId: string): Promise<HealthAnalysis> {
   const response = await fetch('/api/analyze', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ userId: userId || 'demo-user' }),
+    body: JSON.stringify({ userId }),
   });
 
   if (!response.ok) {

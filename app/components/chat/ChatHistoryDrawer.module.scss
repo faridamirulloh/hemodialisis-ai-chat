@@ -122,9 +122,44 @@
     border-color: #059669;
   }
 
+  // Analysis session variant
+  &.analysis {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-color: #c4b5fd;
+
+    &:hover {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border-color: #8b5cf6;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border-color: #8b5cf6;
+    }
+
+    .sessionIcon {
+      color: #8b5cf6;
+    }
+  }
+
   .sessionContent {
     flex: 1;
     cursor: pointer;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .sessionIcon {
+    font-size: 1.25rem;
+    color: #059669;
+    flex-shrink: 0;
+  }
+
+  .sessionInfo {
+    flex: 1;
     min-width: 0;
   }
 

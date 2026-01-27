@@ -10,8 +10,9 @@ import {
   LogoutOutlined,
   HistoryOutlined,
   CaretRightOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
-import { Button, Dropdown, Input } from 'antd';
+import { Button, Dropdown, Input, Typography } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router';
 import { v7 as uuidv7 } from 'uuid';
@@ -23,8 +24,40 @@ import Typewriter from '~/components/chat/Typewriter';
 import { QuickPrompts, welcomeMessage } from '~/constant/chatConstant';
 import { DEV_MODE } from '~/constant/constant';
 import { useAuth } from '~/contexts/AuthContext';
-import { generateKeyEl } from '~/helper/stringHelper';
+import { cleanChatMessage, formatBoldText, formatMarkdownText, generateKeyEl } from '~/helper/stringHelper';
 import { postMessage } from '~/services/chatServices';
+
+const { Title } = Typography;
+
+// Helper to check if session is an analysis session
+const checkIsAnalysisSession = (id: string) => id.startsWith('health-analysis-');
+
+// Helper to check if message is an analysis prompt (user message)
+const isAnalysisPrompt = (text: string) =>
+  text.includes('Kamu adalah asisten kesehatan AI') && text.includes('Format respons dalam JSON');
+
+// Helper to parse analysis content from AI response (may be wrapped in markdown code blocks)
+const parseAnalysisContent = (text: string): { analysis: string; recommendations: string[] } | null => {
+  try {
+    // First, try to extract JSON from markdown code block
+    const jsonBlockMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+    const jsonText = jsonBlockMatch ? jsonBlockMatch[1] : text;
+
+    // Clean up potential trailing commas in JSON (common AI mistake)
+    const cleanedJson = jsonText.replace(/,(\s*[}\]])/g, '$1');
+
+    const parsed = JSON.parse(cleanedJson);
+    if (parsed.analysis) {
+      return {
+        analysis: parsed.analysis,
+        recommendations: parsed.recommendations || [],
+      };
+    }
+  } catch {
+    // Not valid JSON
+  }
+  return null;
+};
 
 const ChatPage = () => {
   const navigate = useNavigate();
@@ -38,6 +71,7 @@ const ChatPage = () => {
   const [isTypewriterComplete, setIsTypewriterComplete] = useState(false);
   const [isTypewriterSkipped, setIsTypewriterSkipped] = useState(false);
   const [isTestAPI, setTestAPI] = useState(false);
+  const [isAnalysisSession, setIsAnalysisSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<TextAreaRef | null>(null);
 
@@ -75,6 +109,11 @@ const ChatPage = () => {
     }
   }, [isHistoryOpen, fetchChatHistory]);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
   // Save chat session when first message is sent
   const saveChatSession = useCallback(
     async (title: string) => {
@@ -98,7 +137,6 @@ const ChatPage = () => {
     [isAuthenticated, user?.id, sessionId, sessionSaved],
   );
 
-  // Load messages from a session
   const loadSession = useCallback(async (selectedSessionId: string) => {
     try {
       const response = await fetch(`/api/chat-history?sessionId=${selectedSessionId}`);
@@ -108,6 +146,7 @@ const ChatPage = () => {
           setSessionId(selectedSessionId);
           setMessages(loadedMessages);
           setLastAssistantMessageId(null);
+          setIsAnalysisSession(checkIsAnalysisSession(selectedSessionId));
           setIsHistoryOpen(false);
         }
       }
@@ -116,7 +155,6 @@ const ChatPage = () => {
     }
   }, []);
 
-  // Delete a chat session
   const deleteSession = useCallback(
     async (targetSessionId: string) => {
       try {
@@ -233,7 +271,7 @@ const ChatPage = () => {
             Chat Baru
           </Button>
           {isAuthenticated ? (
-            <Button size="large" icon={<LogoutOutlined />} onClick={logout}>
+            <Button size="large" icon={<LogoutOutlined />} onClick={handleLogout}>
               {user?.name || 'Keluar'}
             </Button>
           ) : (
@@ -248,42 +286,106 @@ const ChatPage = () => {
 
       <main className={styles.chatBody}>
         <AnimatePresence initial={false} mode="popLayout">
-          {messages.map((m) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-              className={m.role === 'user' ? styles.userMessage : styles.otherMessage}>
-              <div className={styles.messageBox}>
-                <div className={styles.messageRole}>{m.role.toUpperCase()}</div>
-                <div className={styles.messageText}>
-                  {m.role === 'assistant' && m.id === lastAssistantMessageId ? (
-                    <Typewriter
-                      text={m.text}
-                      onProgress={handleTypewriterProgress}
-                      onComplete={handleTypewriterComplete}
-                      isSkipped={isTypewriterSkipped}
-                    />
-                  ) : (
-                    m.text
-                  )}
+          {messages.map((m) => {
+            // Check if this is an analysis session message
+            const isUserAnalysisPrompt = isAnalysisSession && m.role === 'user' && isAnalysisPrompt(m.text);
+            const analysisContent = isAnalysisSession && m.role === 'assistant' ? parseAnalysisContent(m.text) : null;
+
+            // Format date for analysis prompt display
+            const analysisDate = new Date(m.createdAt).toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            });
+
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className={`${m.role === 'user' ? styles.userMessage : styles.otherMessage} ${analysisContent ? styles.analysisMessage : ''} ${isUserAnalysisPrompt ? styles.analysisPrompt : ''}`}>
+                <div className={styles.messageBox}>
+                  <div className={styles.messageRole}>
+                    {analysisContent ? (
+                      <>
+                        <RobotOutlined /> ANALISIS KESEHATAN AI
+                      </>
+                    ) : isUserAnalysisPrompt ? (
+                      <>
+                        <HeartOutlined /> PERMINTAAN ANALISIS
+                      </>
+                    ) : (
+                      m.role.toUpperCase()
+                    )}
+                  </div>
+                  <div className={styles.messageText}>
+                    {isUserAnalysisPrompt ? (
+                      // Show simplified text for analysis prompt
+                      <span>Analisa kesehatan pada tanggal {analysisDate}</span>
+                    ) : analysisContent ? (
+                      // Render formatted analysis content
+                      <div className={styles.analysisContent}>
+                        <div className={styles.analysisSection}>
+                          <Title level={5}>
+                            <RobotOutlined /> Ringkasan Analisis
+                          </Title>
+                          <div className={styles.analysisText}>{analysisContent.analysis}</div>
+                        </div>
+                        {analysisContent.recommendations.length > 0 && (
+                          <div className={styles.analysisSection}>
+                            <Title level={5}>
+                              <BulbOutlined /> Rekomendasi
+                            </Title>
+                            <ul className={styles.recommendationsList}>
+                              {analysisContent.recommendations.map((rec, index) => (
+                                <motion.li
+                                  key={generateKeyEl(rec.slice(0, 20), index)}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: index * 0.1 }}>
+                                  <span className={styles.recNumber}>{index + 1}</span>
+                                  <span className={styles.recText}>{formatBoldText(rec)}</span>
+                                </motion.li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : m.role === 'assistant' && m.id === lastAssistantMessageId ? (
+                      <Typewriter
+                        text={m.text}
+                        onProgress={handleTypewriterProgress}
+                        onComplete={handleTypewriterComplete}
+                        isSkipped={isTypewriterSkipped}
+                      />
+                    ) : m.role === 'assistant' ? (
+                      // Format assistant messages with markdown (bold, bullets)
+                      formatMarkdownText(m.text)
+                    ) : (
+                      // Format user messages and clean up ' || ' at end
+                      cleanChatMessage(m.text)
+                    )}
+                  </div>
+                  {m.role === 'assistant' &&
+                    m.id === lastAssistantMessageId &&
+                    !isTypewriterComplete &&
+                    !analysisContent && (
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={handleSkipTypewriter}
+                        className={styles.skipButton}
+                        icon={<FastForwardOutlined />}>
+                        Skip
+                      </Button>
+                    )}
+                  <div className={styles.timestamp}>{new Date(m.createdAt).toLocaleString()}</div>
                 </div>
-                {m.role === 'assistant' && m.id === lastAssistantMessageId && !isTypewriterComplete && (
-                  <Button
-                    size="small"
-                    type="text"
-                    onClick={handleSkipTypewriter}
-                    className={styles.skipButton}
-                    icon={<FastForwardOutlined />}>
-                    Skip
-                  </Button>
-                )}
-                <div className={styles.timestamp}>{new Date(m.createdAt).toLocaleString()}</div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
           {loading && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
