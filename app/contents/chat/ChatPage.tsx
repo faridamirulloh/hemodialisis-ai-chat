@@ -116,6 +116,33 @@ const ChatPage = () => {
     }
   }, []);
 
+  // Delete a chat session
+  const deleteSession = useCallback(
+    async (targetSessionId: string) => {
+      try {
+        const response = await fetch(`/api/chat-history?sessionId=${targetSessionId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          // Remove from local state
+          setHistorySessions((prev) => prev.filter((s) => s.sessionId !== targetSessionId));
+
+          // If deleting current session, start a new chat
+          if (targetSessionId === sessionId) {
+            setSessionId(uuidv7());
+            setMessages([welcomeMessage(new Date())]);
+            setLastAssistantMessageId(null);
+            setSessionSaved(false);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete session:', err);
+      }
+    },
+    [sessionId],
+  );
+
   // Auto scroll during typewriter animation
   const handleTypewriterProgress = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -352,6 +379,7 @@ const ChatPage = () => {
         isAuthenticated={isAuthenticated}
         currentSessionId={sessionId}
         onSelectSession={loadSession}
+        onDeleteSession={deleteSession}
       />
     </div>
   );

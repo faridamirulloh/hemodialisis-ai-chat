@@ -112,5 +112,31 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
+  if (method === 'DELETE') {
+    try {
+      const url = new URL(request.url);
+      const sessionId = url.searchParams.get('sessionId');
+
+      if (!sessionId) {
+        return data({ error: 'sessionId is required' }, { status: 400 });
+      }
+
+      // Delete chat history messages first (from n8n_chat_histories)
+      await prisma.chatHistory.deleteMany({
+        where: { sessionId },
+      });
+
+      // Delete the chat session
+      await prisma.chatSession.delete({
+        where: { id: sessionId },
+      });
+
+      return data({ success: true }, { status: 200 });
+    } catch (error) {
+      console.error('Failed to delete chat session:', error);
+      return data({ error: 'Failed to delete chat session' }, { status: 500 });
+    }
+  }
+
   return data({ error: 'Method not allowed' }, { status: 405 });
 }

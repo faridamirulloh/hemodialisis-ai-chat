@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
-import { CloseOutlined, HistoryOutlined, MessageOutlined } from '@ant-design/icons';
-import { Button, Spin } from 'antd';
+import { CloseOutlined, DeleteOutlined, HistoryOutlined, MessageOutlined } from '@ant-design/icons';
+import { Button, Popconfirm, Spin } from 'antd';
 import { Link } from 'react-router';
 import styles from './ChatHistoryDrawer.module.scss';
 import type { ChatSessionSummary } from '~/types/chat';
@@ -13,6 +13,7 @@ interface ChatHistoryDrawerProps {
   isAuthenticated: boolean;
   currentSessionId?: string;
   onSelectSession: (sessionId: string) => void;
+  onDeleteSession?: (sessionId: string) => void;
 }
 
 const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
@@ -23,6 +24,7 @@ const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
   isAuthenticated,
   currentSessionId,
   onSelectSession,
+  onDeleteSession,
 }) => {
   // Handle outside click
   const handleOverlayClick = useCallback(
@@ -111,13 +113,39 @@ const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className={`${styles.sessionItem} ${currentSessionId === session.sessionId ? styles.active : ''}`}
-                  onClick={() => onSelectSession(session.sessionId)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === 'Enter' && onSelectSession(session.sessionId)}>
-                  <div className={styles.sessionTitle}>{session.title || 'Chat tanpa judul'}</div>
-                  <div className={styles.sessionDate}>{formatDate(session.createdAt)}</div>
+                  className={`${styles.sessionItem} ${currentSessionId === session.sessionId ? styles.active : ''}`}>
+                  <div
+                    className={styles.sessionContent}
+                    onClick={() => onSelectSession(session.sessionId)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && onSelectSession(session.sessionId)}>
+                    <div className={styles.sessionTitle}>{session.title || 'Chat tanpa judul'}</div>
+                    <div className={styles.sessionDate}>{formatDate(session.createdAt)}</div>
+                  </div>
+                  {onDeleteSession && (
+                    <Popconfirm
+                      title="Hapus riwayat chat?"
+                      description="Tindakan ini tidak dapat dibatalkan."
+                      onConfirm={(e) => {
+                        e?.stopPropagation();
+                        onDeleteSession(session.sessionId);
+                      }}
+                      onCancel={(e) => e?.stopPropagation()}
+                      okText="Hapus"
+                      cancelText="Batal"
+                      okButtonProps={{ danger: true }}>
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        className={styles.deleteButton}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Hapus chat"
+                      />
+                    </Popconfirm>
+                  )}
                 </div>
               ))}
             </div>
