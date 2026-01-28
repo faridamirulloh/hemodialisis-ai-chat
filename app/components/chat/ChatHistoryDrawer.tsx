@@ -125,9 +125,7 @@ const ChatHistoryDrawer: React.FC<ChatHistoryDrawerProps> = ({
                       role="button"
                       tabIndex={0}
                       onKeyPress={(e) => e.key === 'Enter' && onSelectSession(session.sessionId)}>
-                      <div className={styles.sessionIcon}>
-                        {isAnalysis ? <RobotOutlined /> : <MessageOutlined />}
-                      </div>
+                      <div className={styles.sessionIcon}>{isAnalysis ? <RobotOutlined /> : <MessageOutlined />}</div>
                       <div className={styles.sessionInfo}>
                         <div className={styles.sessionTitle}>
                           {isAnalysis ? 'Analisis Kesehatan AI' : session.title || 'Chat tanpa judul'}

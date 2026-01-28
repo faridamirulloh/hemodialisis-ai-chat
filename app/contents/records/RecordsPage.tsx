@@ -7,8 +7,9 @@ import {
   PlusOutlined,
   ArrowLeftOutlined,
   RobotOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
-import { Button, Segmented, Spin, Empty, message } from 'antd';
+import { Button, Segmented, Spin, Empty, message, Popconfirm } from 'antd';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import AnalysisPanel from './components/AnalysisPanel';
@@ -20,7 +21,7 @@ import CardsView from './views/CardsView';
 import TimelineView from './views/TimelineView';
 import type { HealthRecord, RecordFilter, ViewMode } from '~/types/record';
 import { useAuth } from '~/contexts/AuthContext';
-import { fetchRecords, deleteRecord } from '~/services/recordServices';
+import { fetchRecords, deleteRecord, deleteAllRecords } from '~/services/recordServices';
 
 const viewOptions = [
   { value: 'timeline', icon: <UnorderedListOutlined />, label: 'Timeline' },
@@ -39,6 +40,7 @@ const RecordsPage: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
   const [filter, setFilter] = useState<RecordFilter>({});
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [initialDate, setInitialDate] = useState<Date | null>(null);
 
   const loadRecords = useCallback(async () => {
     setLoading(true);
@@ -59,6 +61,13 @@ const RecordsPage: React.FC = () => {
 
   const handleAddRecord = () => {
     setEditingRecord(null);
+    setInitialDate(null);
+    setShowForm(true);
+  };
+
+  const handleAddRecordWithDate = (date: Date) => {
+    setEditingRecord(null);
+    setInitialDate(date);
     setShowForm(true);
   };
 
@@ -75,6 +84,18 @@ const RecordsPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to delete record:', error);
       message.error('Gagal menghapus catatan');
+    }
+  };
+
+  const handleDeleteAllRecords = async () => {
+    if (!user?.id) return;
+    try {
+      const result = await deleteAllRecords(user.id);
+      message.success(`${result.deletedCount} catatan berhasil dihapus`);
+      loadRecords();
+    } catch (error) {
+      console.error('Failed to delete all records:', error);
+      message.error('Gagal menghapus semua catatan');
     }
   };
 
@@ -123,7 +144,14 @@ const RecordsPage: React.FC = () => {
       case 'cards':
         return <CardsView records={records} onEdit={handleEditRecord} onDelete={handleDeleteRecord} />;
       case 'calendar':
-        return <CalendarView records={records} onEdit={handleEditRecord} onDelete={handleDeleteRecord} />;
+        return (
+          <CalendarView
+            records={records}
+            onEdit={handleEditRecord}
+            onDelete={handleDeleteRecord}
+            onAdd={handleAddRecordWithDate}
+          />
+        );
       default:
         return null;
     }
@@ -161,6 +189,18 @@ const RecordsPage: React.FC = () => {
           <Button icon={<RobotOutlined />} onClick={() => setShowAnalysis(true)} className={styles.analyzeButton}>
             Analisis AI
           </Button>
+          <Popconfirm
+            title="Hapus Semua Catatan"
+            description="Apakah Anda yakin ingin menghapus semua catatan? Tindakan ini tidak dapat dibatalkan."
+            onConfirm={handleDeleteAllRecords}
+            okText="Hapus Semua"
+            cancelText="Batal"
+            okButtonProps={{ danger: true }}
+            disabled={records.length === 0}>
+            <Button icon={<DeleteOutlined />} danger disabled={records.length === 0}>
+              Hapus Semua
+            </Button>
+          </Popconfirm>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRecord}>
             Tambah Catatan
           </Button>
@@ -181,7 +221,13 @@ const RecordsPage: React.FC = () => {
 
       <main className={styles.content}>{renderView()}</main>
 
-      <RecordForm visible={showForm} record={editingRecord} onClose={handleFormClose} onSuccess={handleFormSuccess} />
+      <RecordForm
+        visible={showForm}
+        record={editingRecord}
+        initialDate={initialDate}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
+      />
 
       <AnalysisPanel visible={showAnalysis} onClose={() => setShowAnalysis(false)} />
     </div>

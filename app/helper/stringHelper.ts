@@ -13,7 +13,7 @@ export const formatBoldText = (text: string): React.ReactNode => {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return React.createElement('strong', { key: i }, part.slice(2, -2));
+      return React.createElement('strong', { key: generateKeyEl('part', i) }, part.slice(2, -2));
     }
     return part;
   });
@@ -34,7 +34,7 @@ export const formatMarkdownText = (text: string): React.ReactNode => {
       const bulletContent = formatBoldText(bulletMatch[2]);
       content = React.createElement(
         'div',
-        { key: `line-${lineIndex}`, style: { display: 'flex', gap: '0.5rem', marginLeft: '1rem' } },
+        { key: generateKeyEl('line', lineIndex), style: { display: 'flex', gap: '0.5rem', marginLeft: '1rem' } },
         React.createElement('span', null, '•'),
         React.createElement('span', null, bulletContent),
       );
@@ -42,7 +42,7 @@ export const formatMarkdownText = (text: string): React.ReactNode => {
       // Apply bold formatting to regular text
       content = formatBoldText(line);
       if (lineIndex < lines.length - 1) {
-        content = React.createElement('span', { key: `line-${lineIndex}` }, content, '\n');
+        content = React.createElement('span', { key: generateKeyEl('line', lineIndex) }, content, '\n');
       }
     }
 

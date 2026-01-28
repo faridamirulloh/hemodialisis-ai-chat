@@ -13,12 +13,14 @@ import {
   type SeverityLevel,
   type MoodType,
   LAB_TEST_CATEGORIES,
+  LAB_NORMAL_RANGES,
   COMMON_SYMPTOMS,
 } from '~/types/record';
 
 interface RecordFormProps {
   visible: boolean;
   record: HealthRecord | null;
+  initialDate?: Date | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,7 +48,7 @@ const ACCESS_TYPE_OPTIONS = [
 
 const ALL_LAB_TESTS = Object.values(LAB_TEST_CATEGORIES).flat();
 
-const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuccess }) => {
+const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, onClose, onSuccess }) => {
   const { user } = useAuth();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -90,7 +92,8 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
       } else {
         // Creating new record - fetch last record for defaults
         form.resetFields();
-        form.setFieldsValue({ date: dayjs(), category: 'general' });
+        const dateToUse = initialDate ? dayjs(initialDate) : dayjs();
+        form.setFieldsValue({ date: dateToUse, category: 'general' });
         setSelectedSymptoms([]);
         setLabResults([]);
         setSelectedMood(undefined);
@@ -127,7 +130,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
         }
       }
     }
-  }, [visible, record, form, user?.id]);
+  }, [visible, record, form, user?.id, initialDate]);
 
   // Helper to render label with "previous data" indicator icon
   const renderLabel = (label: string, fieldName: string) => (
@@ -167,7 +170,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
   };
 
   const addLabResult = () => {
-    setLabResults([...labResults, { testName: '', value: 0, unit: '', normalRange: '', flag: 'normal' }]);
+    setLabResults([...labResults, { testName: '', value: 0, flag: 'normal' }]);
   };
 
   const removeLabResult = (index: number) => {
@@ -175,7 +178,30 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
   };
 
   const updateLabResult = (index: number, field: keyof LabResult, value: unknown) => {
-    setLabResults(labResults.map((result, i) => (i === index ? { ...result, [field]: value } : result)));
+    setLabResults(
+      labResults.map((result, i) => {
+        if (i !== index) return result;
+
+        // When testName changes, auto-calculate flag based on current value
+        if (field === 'testName' && typeof value === 'string') {
+          const range = LAB_NORMAL_RANGES[value];
+          if (range) {
+            const flag = result.value < range.min ? 'low' : result.value > range.max ? 'high' : 'normal';
+            return { ...result, testName: value, flag };
+          }
+          return { ...result, testName: value };
+        }
+
+        // When value changes, recalculate the flag
+        if (field === 'value' && typeof value === 'number') {
+          const range = LAB_NORMAL_RANGES[result.testName];
+          const flag = range ? (value < range.min ? 'low' : value > range.max ? 'high' : 'normal') : 'normal';
+          return { ...result, value, flag };
+        }
+
+        return { ...result, [field]: value };
+      }),
+    );
   };
 
   const handleSubmit = async () => {
@@ -453,18 +479,28 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, onClose, onSuc
                 />
               </Col>
               <Col span={4}>
-                <Input
-                  placeholder="Unit"
-                  value={result.unit}
-                  onChange={(e) => updateLabResult(index, 'unit', e.target.value)}
-                />
+                <Tooltip title={LAB_NORMAL_RANGES[result.testName]?.dialysisNote}>
+                  <Input
+                    placeholder="Unit"
+                    value={LAB_NORMAL_RANGES[result.testName]?.unit || ''}
+                    readOnly
+                    style={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Tooltip>
               </Col>
               <Col span={5}>
-                <Input
-                  placeholder="Normal Range"
-                  value={result.normalRange}
-                  onChange={(e) => updateLabResult(index, 'normalRange', e.target.value)}
-                />
+                <Tooltip title={LAB_NORMAL_RANGES[result.testName]?.dialysisNote}>
+                  <Input
+                    placeholder="Normal Range"
+                    value={
+                      LAB_NORMAL_RANGES[result.testName]
+                        ? `${LAB_NORMAL_RANGES[result.testName].min}-${LAB_NORMAL_RANGES[result.testName].max}`
+                        : ''
+                    }
+                    readOnly
+                    style={{ backgroundColor: '#f5f5f5' }}
+                  />
+                </Tooltip>
               </Col>
               <Col span={3}>
                 <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeLabResult(index)} />

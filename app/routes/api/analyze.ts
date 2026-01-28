@@ -5,6 +5,11 @@ export async function action({ request }: { request: Request }) {
   try {
     const body = await request.json();
     let { userId } = body;
+    const { startDate, endDate, startFrom } = body as {
+      startDate?: string;
+      endDate?: string;
+      startFrom?: 'beginning' | 'lastAnalysis' | 'custom';
+    };
 
     // Check if provided userId has records, otherwise find a user that does
     if (userId) {
@@ -38,11 +43,42 @@ export async function action({ request }: { request: Request }) {
       );
     }
 
-    // Fetch recent records for analysis
+    // Build date filter based on startFrom option
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+
+    if (startFrom === 'beginning') {
+      // No start date filter - get all records from beginning
+    } else if (startFrom === 'lastAnalysis') {
+      // Find the last analysis session for this user
+      const lastAnalysis = await prisma.chatSession.findFirst({
+        where: {
+          id: {
+            startsWith: `health-analysis-${userId}`,
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true },
+      });
+      if (lastAnalysis) {
+        dateFilter.gte = lastAnalysis.updatedAt;
+      }
+    } else if (startFrom === 'custom' && startDate) {
+      dateFilter.gte = new Date(startDate);
+    }
+
+    if (endDate) {
+      dateFilter.lte = new Date(endDate);
+    } else {
+      dateFilter.lte = new Date(); // Default to current date
+    }
+
+    // Fetch records for analysis with date range
     const records = await prisma.record.findMany({
-      where: { userId },
+      where: {
+        userId,
+        date: Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
+      },
       orderBy: { date: 'desc' },
-      take: 20, // Analyze last 20 records
     });
 
     console.log('Records found:', records.length, 'for userId:', userId);
@@ -82,7 +118,7 @@ Format respons dalam JSON:
     const aiResponse = await fetch(Chat.POST.Prompt, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: aiPrompt, sessionId: `health-analysis-${userId}`, userId }),
+      body: JSON.stringify({ message: aiPrompt, sessionId: `health-analysis-${userId}-${Date.now()}`, userId }),
     });
 
     const aiText = await aiResponse.text();
@@ -142,45 +178,128 @@ interface RecordData {
 function prepareHealthSummary(records: RecordData[]): string {
   const lines: string[] = [];
 
-  // Blood pressure stats
-  const bpRecords = records.filter((r) => r.bloodPressure);
-  if (bpRecords.length > 0) {
-    const systolics = bpRecords
-      .map((r) => (r.bloodPressure as { systolic?: number })?.systolic)
-      .filter(Boolean) as number[];
-    const diastolics = bpRecords
-      .map((r) => (r.bloodPressure as { diastolic?: number })?.diastolic)
-      .filter(Boolean) as number[];
-    if (systolics.length > 0) {
-      const avgSystolic = Math.round(systolics.reduce((a, b) => a + b, 0) / systolics.length);
-      const avgDiastolic = Math.round(diastolics.reduce((a, b) => a + b, 0) / diastolics.length);
-      lines.push(`- Tekanan darah rata-rata: ${avgSystolic}/${avgDiastolic} mmHg`);
-      lines.push(`- Tekanan darah tertinggi: ${Math.max(...systolics)}/${Math.max(...diastolics)} mmHg`);
-      lines.push(`- Tekanan darah terendah: ${Math.min(...systolics)}/${Math.min(...diastolics)} mmHg`);
+  // Sort records by date (oldest first for chronological view)
+  const sortedRecords = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Chronological data for each record
+  lines.push('=== DATA KRONOLOGIS PER TANGGAL ===\n');
+
+  sortedRecords.forEach((record, index) => {
+    const date = new Date(record.date).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    lines.push(`📅 ${date} (Catatan ke-${index + 1}):`);
+
+    // Blood pressure
+    if (record.bloodPressure) {
+      const bp = record.bloodPressure as { systolic?: number; diastolic?: number; pulse?: number };
+      if (bp.systolic && bp.diastolic) {
+        lines.push(`   • Tekanan darah: ${bp.systolic}/${bp.diastolic} mmHg`);
+      }
+      if (bp.pulse) {
+        lines.push(`   • Detak jantung: ${bp.pulse} bpm`);
+      }
+    }
+
+    // Weight
+    if (record.weight) {
+      lines.push(`   • Berat badan: ${record.weight} kg`);
+    }
+
+    // Fluid intake
+    if (record.fluidIntake) {
+      lines.push(`   • Asupan cairan: ${record.fluidIntake} ml`);
+    }
+
+    // Symptoms
+    const symptoms = record.symptoms as { name: string; severity: string }[] | null;
+    if (symptoms && Array.isArray(symptoms) && symptoms.length > 0) {
+      const symptomList = symptoms.map((s) => `${s.name} (${s.severity})`).join(', ');
+      lines.push(`   • Gejala: ${symptomList}`);
+    }
+
+    // Mood
+    if (record.mood) {
+      const moodMap: Record<string, string> = { good: 'Baik', neutral: 'Biasa', bad: 'Buruk' };
+      lines.push(`   • Mood: ${moodMap[record.mood] || record.mood}`);
+    }
+
+    // Dialysis
+    if (record.dialysisSchedule) {
+      const dialysis = record.dialysisSchedule as { completed?: boolean; duration?: number };
+      if (dialysis.completed !== undefined) {
+        lines.push(
+          `   • Dialisis: ${dialysis.completed ? 'Selesai' : 'Tidak selesai'}${dialysis.duration ? ` (${dialysis.duration} jam)` : ''}`,
+        );
+      }
+    }
+
+    // Lab results
+    if (record.labResults && Array.isArray(record.labResults)) {
+      const labs = record.labResults as { testName: string; value: number; flag?: string }[];
+      if (labs.length > 0) {
+        const labList = labs
+          .map((lab) => {
+            const flagLabel = lab.flag === 'high' ? '↑' : lab.flag === 'low' ? '↓' : '';
+            return `${lab.testName}: ${lab.value}${flagLabel}`;
+          })
+          .join(', ');
+        lines.push(`   • Hasil lab: ${labList}`);
+      }
+    }
+
+    // Diet notes
+    if (record.dietNotes) {
+      lines.push(`   • Catatan diet: ${record.dietNotes}`);
+    }
+
+    // General notes
+    if (record.note) {
+      lines.push(`   • Catatan: ${record.note}`);
+    }
+
+    lines.push(''); // Empty line between records
+  });
+
+  // Add summary statistics at the end for context
+  lines.push('=== RINGKASAN STATISTIK ===\n');
+
+  // Blood pressure trend
+  const bpRecords = sortedRecords.filter((r) => r.bloodPressure);
+  if (bpRecords.length >= 2) {
+    const firstBp = bpRecords[0].bloodPressure as { systolic?: number; diastolic?: number };
+    const lastBp = bpRecords[bpRecords.length - 1].bloodPressure as { systolic?: number; diastolic?: number };
+    if (firstBp.systolic && lastBp.systolic) {
+      const systolicChange = lastBp.systolic - firstBp.systolic;
+      const diastolicChange = (lastBp.diastolic || 0) - (firstBp.diastolic || 0);
+      lines.push(
+        `• Tren tekanan darah: ${systolicChange > 0 ? '+' : ''}${systolicChange}/${diastolicChange > 0 ? '+' : ''}${diastolicChange} mmHg (dari catatan pertama ke terakhir)`,
+      );
     }
   }
 
-  // Weight stats
-  const weights = records.map((r) => r.weight).filter(Boolean) as number[];
-  if (weights.length > 0) {
-    const avgWeight = Math.round((weights.reduce((a, b) => a + b, 0) / weights.length) * 10) / 10;
-    lines.push(`- Berat badan rata-rata: ${avgWeight} kg`);
-    if (weights.length >= 2) {
-      const change = weights[0] - weights[weights.length - 1];
-      lines.push(`- Perubahan berat badan: ${change > 0 ? '+' : ''}${change.toFixed(1)} kg`);
-    }
+  // Weight trend
+  const weights = sortedRecords.map((r) => r.weight).filter(Boolean) as number[];
+  if (weights.length >= 2) {
+    const weightChange = weights[weights.length - 1] - weights[0];
+    lines.push(
+      `• Tren berat badan: ${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg (dari catatan pertama ke terakhir)`,
+    );
   }
 
-  // Fluid intake
-  const fluids = records.map((r) => r.fluidIntake).filter(Boolean) as number[];
+  // Average fluid intake
+  const fluids = sortedRecords.map((r) => r.fluidIntake).filter(Boolean) as number[];
   if (fluids.length > 0) {
     const avgFluid = Math.round(fluids.reduce((a, b) => a + b, 0) / fluids.length);
-    lines.push(`- Asupan cairan rata-rata: ${avgFluid} ml/hari`);
+    lines.push(`• Asupan cairan rata-rata: ${avgFluid} ml/hari`);
   }
 
-  // Symptoms frequency
+  // Most common symptoms
   const symptomCounts: Record<string, number> = {};
-  records.forEach((r) => {
+  sortedRecords.forEach((r) => {
     const symptoms = r.symptoms as { name: string; severity: string }[] | null;
     if (symptoms && Array.isArray(symptoms)) {
       symptoms.forEach((s) => {
@@ -192,29 +311,17 @@ function prepareHealthSummary(records: RecordData[]): string {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   if (topSymptoms.length > 0) {
-    lines.push(`- Gejala yang sering muncul: ${topSymptoms.map(([name, count]) => `${name} (${count}x)`).join(', ')}`);
+    lines.push(`• Gejala paling sering: ${topSymptoms.map(([name, count]) => `${name} (${count}x)`).join(', ')}`);
   }
 
-  // Mood distribution
-  const moods = records.map((r) => r.mood).filter(Boolean) as string[];
+  // Mood trend
+  const moods = sortedRecords.map((r) => r.mood).filter(Boolean) as string[];
   if (moods.length > 0) {
     const moodCounts = { good: 0, neutral: 0, bad: 0 };
     moods.forEach((m) => {
       if (m in moodCounts) moodCounts[m as keyof typeof moodCounts]++;
     });
-    lines.push(`- Distribusi mood: Baik ${moodCounts.good}x, Biasa ${moodCounts.neutral}x, Buruk ${moodCounts.bad}x`);
-  }
-
-  // Dialysis frequency
-  const dialysisRecords = records.filter((r) => r.dialysisSchedule);
-  if (dialysisRecords.length > 0) {
-    lines.push(`- Sesi dialisis tercatat: ${dialysisRecords.length} kali`);
-  }
-
-  // Lab results summary
-  const labRecords = records.filter((r) => r.labResults);
-  if (labRecords.length > 0) {
-    lines.push(`- Catatan hasil lab: ${labRecords.length} kali`);
+    lines.push(`• Distribusi mood: Baik ${moodCounts.good}x, Biasa ${moodCounts.neutral}x, Buruk ${moodCounts.bad}x`);
   }
 
   return lines.join('\n');

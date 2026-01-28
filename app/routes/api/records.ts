@@ -144,7 +144,18 @@ export async function action({ request }: Route.ActionArgs) {
     try {
       const url = new URL(request.url);
       const id = url.searchParams.get('id');
+      const deleteAll = url.searchParams.get('deleteAll');
+      const userId = url.searchParams.get('userId');
 
+      // Delete all records for a user
+      if (deleteAll === 'true' && userId) {
+        const result = await prisma.record.deleteMany({
+          where: { userId },
+        });
+        return data({ success: true, deletedCount: result.count }, { status: 200 });
+      }
+
+      // Delete single record
       if (!id) {
         return data({ error: 'Record ID is required' }, { status: 400 });
       }
