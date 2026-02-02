@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'hemodialysis_app'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['localhost:9999']
+
+  - job_name: 'n8n'
+    static_configs:
+      - targets: ['localhost:5678']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['localhost:9187']

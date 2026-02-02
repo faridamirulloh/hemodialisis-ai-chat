@@ -1,0 +1,33 @@
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    network_mode: host
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - 3090:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:a@192.168.1.99:5432/hemodialisis?schema=public&sslmode=disable"
+    ports:
+      - 9187:9187
+    restart: always
+
+volumes:
+  prometheus_data:
+  grafana_data:
