@@ -9,51 +9,21 @@ export const welcomeMessage = (date: Date): ChatMessage => ({
 
 export const QuickPrompts = [
   {
-    name: 'Diet',
+    name: 'Pola Makan',
     items: [
-      'Apa saja tantangan yang sering dihadapi pasien hemodialisis dalam mengatur diet dan cairan?',
-      'Adakah tips pasien hemodialisis untuk mengatasi kesulitan pembatasan diet dan cairan?',
+      'Boleh minum berapa banyak dalam sehari?',
+      'Apa saja pantangan makanannya?',
+      'Apa saja yang dihitung sebagai cairan?',
+      'Bagaimana cara mengatasi rasa haus tanpa banyak minum?',
+      'Apakah saya perlu suplemen vitamin tambahan?',
     ],
   },
   {
-    name: 'Efek Samping',
-    items: [
-      'Bagaimana cara mencegah atau mengatasi kelebihan cairan saat menjalani dialisis?',
-      'Apa saja efek samping yang umum terjadi setelah sesi dialisis?',
-      'Mengapa saya mengalami anemia sebagai pasien ginjal?',
-    ],
+    name: 'Efek Samping & Gejala',
+    items: ['Kenapa saya merasa sangat lelah setelah cuci darah?', 'Kenapa kulit saya gatal dan sering kram?'],
   },
   {
-    name: 'Prosedur Dialisis',
-    items: [
-      'Apa saja panduan umum untuk dialisis, khususnya hemodialisis, di Indonesia?',
-      'Apa perbedaan antara hemodialisis dan CAPD?',
-    ],
-  },
-  {
-    name: 'Kesehatan dan Gaya Hidup',
-    items: [
-      'Bagaimana cara menjaga tekanan darah tetap stabil?',
-      'Olahraga apa yang aman untuk saya?',
-      'Bagaimana cara mengatasi kelelahan yang sering saya rasakan?',
-      'Apakah saya perlu mengonsumsi suplemen tertentu?',
-      'Bagaimana cara menjaga kesehatan mental dan tetap positif selama menjalani pengobatan?',
-    ],
-  },
-  {
-    name: 'Nutrisi',
-    items: [
-      'Apa saja rekomendasi nutrisi dan diet untuk pasien dengan penyakit ginjal atau yang sedang dialisis?',
-      'Bagaimana cara mengatur pola makan yang sehat untuk mendukung kesehatan ginjal saya?',
-    ],
-  },
-  {
-    name: 'Pengetahuan',
-    items: [
-      'Apa itu Gagal Ginjal Akut (GGA) dan bagaimana cara penanganannya?',
-      'Apa saja penyebab umum Gagal Ginjal Akut?',
-      'Bagaimana cara kerja ginjal buatan (dialyzer)?',
-      'Apa saja tanda-tanda komplikasi yang harus saya waspadai?',
-    ],
+    name: 'Gaya Hidup',
+    items: ['Apakah saya masih bisa bekerja atau bepergian (traveling)?', 'Bolehkan saya tetap berolahraga?'],
   },
 ];
