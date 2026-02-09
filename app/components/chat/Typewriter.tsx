@@ -7,9 +7,17 @@ interface TypewriterProps {
   onComplete?: () => void;
   onProgress?: () => void;
   isSkipped?: boolean;
+  formatText?: (text: string) => React.ReactNode;
 }
 
-const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, onProgress, isSkipped = false }) => {
+const Typewriter: React.FC<TypewriterProps> = ({
+  text,
+  speed = 10,
+  onComplete,
+  onProgress,
+  isSkipped = false,
+  formatText,
+}) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -41,9 +49,12 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, o
     }
   }, [currentIndex, text, speed, onComplete, onProgress, isSkipped, isComplete]);
 
+  // Apply formatting if provided, otherwise show plain text
+  const renderedContent = formatText ? formatText(displayedText) : displayedText;
+
   return (
     <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1 }}>
-      {displayedText}
+      {renderedContent}
     </motion.span>
   );
 };

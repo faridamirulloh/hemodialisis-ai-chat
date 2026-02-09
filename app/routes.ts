@@ -12,4 +12,6 @@ export default [
   route('/api/records', 'routes/api/records.ts'),
   route('/api/analyze', 'routes/api/analyze.ts'),
   route('/api/metrics', 'routes/api/metrics.ts'),
+  route('/api/forgot-password', 'routes/api/forgot-password.ts'),
+  route('/api/reset-password', 'routes/api/reset-password.ts'),
 ] satisfies RouteConfig;

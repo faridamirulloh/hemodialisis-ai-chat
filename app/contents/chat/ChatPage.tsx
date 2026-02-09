@@ -359,6 +359,7 @@ const ChatPage = () => {
                         onProgress={handleTypewriterProgress}
                         onComplete={handleTypewriterComplete}
                         isSkipped={isTypewriterSkipped}
+                        formatText={formatMarkdownText}
                       />
                     ) : m.role === 'assistant' ? (
                       // Format assistant messages with markdown (bold, bullets)
