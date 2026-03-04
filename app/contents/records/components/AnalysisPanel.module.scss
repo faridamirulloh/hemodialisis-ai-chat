@@ -1,3 +1,13 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+}
+
 .analysisPanel {
   position: fixed;
   top: 0;
@@ -46,6 +56,34 @@
           background: rgba(255, 255, 255, 0.2);
         }
       }
+    }
+  }
+
+  .autoAnalysisSection {
+    padding: 0.5rem 1.5rem;
+    background: #f0fdf4;
+    border-bottom: 1px solid #d1fae5;
+
+    .autoAnalysisRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .autoAnalysisLabel {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #059669;
+      }
+    }
+
+    .autoAnalysisDaysRow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+      overflow: hidden;
     }
   }
 

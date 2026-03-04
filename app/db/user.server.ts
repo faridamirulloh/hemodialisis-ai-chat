@@ -36,7 +36,7 @@ export async function createUser(
   const hashedPassword = await bcrypt.hash(password, 10);
 
   return prisma.user.create({
-    data: { email, name, password: hashedPassword },
+    data: { email: email.toLowerCase(), name, password: hashedPassword },
     select: {
       id: true,
       email: true,
@@ -46,7 +46,7 @@ export async function createUser(
 }
 
 export async function verifyLogin(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
   if (!user) return null;
 
   const isValid = await bcrypt.compare(password, user.password);

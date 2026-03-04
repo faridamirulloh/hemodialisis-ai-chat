@@ -8,7 +8,8 @@ export async function action({ request }: { request: Request }) {
 
   try {
     const body = await request.json();
-    const { email, code, newPassword } = body;
+    const { email: rawEmail, code, newPassword } = body;
+    const email = rawEmail?.toLowerCase();
 
     if (!email || !code || !newPassword) {
       return Response.json({ error: 'Semua field diperlukan' }, { status: 400 });

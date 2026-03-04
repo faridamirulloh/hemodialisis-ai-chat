@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RobotOutlined,
   BulbOutlined,
@@ -9,8 +9,9 @@ import {
   PlayCircleOutlined,
   LeftOutlined,
   RightOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
-import { Button, Spin, Typography, Empty, Radio, DatePicker, Space, Divider } from 'antd';
+import { Button, Spin, Typography, Empty, Radio, DatePicker, Space, Divider, Switch, InputNumber, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './AnalysisPanel.module.scss';
@@ -21,6 +22,8 @@ import {
   analyzeHealth,
   fetchAnalysisHistory,
   fetchAnalysisSession,
+  checkAnalysisFreshness,
+  updateUserSettings,
   type HealthAnalysis,
   type AnalysisOptions,
   type AnalysisHistoryItem,
@@ -52,6 +55,51 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
   const [customStartDate, setCustomStartDate] = useState<dayjs.Dayjs | null>(null);
   const [customEndDate, setCustomEndDate] = useState<dayjs.Dayjs | null>(null);
   const [showDateOptions, setShowDateOptions] = useState(false);
+
+  // Auto analysis state
+  const [autoAnalysis, setAutoAnalysis] = useState<boolean>(true);
+  const [autoAnalysisDays, setAutoAnalysisDays] = useState<number>(0);
+  const autoAnalysisRanRef = useRef(false);
+
+  // Initialize auto analysis settings from user data
+  useEffect(() => {
+    if (user?.data) {
+      const data = user.data;
+      if (typeof data.autoAnalysis === 'boolean') {
+        setAutoAnalysis(data.autoAnalysis);
+      }
+      if (typeof data.autoAnalysisDays === 'number') {
+        setAutoAnalysisDays(data.autoAnalysisDays);
+      }
+    }
+  }, [user?.data]);
+
+  // Reset the auto-analysis guard when panel closes
+  useEffect(() => {
+    if (!visible) {
+      autoAnalysisRanRef.current = false;
+    }
+  }, [visible]);
+
+  // Save auto analysis settings to DB
+  const saveAutoAnalysisSettings = useCallback(async (enabled: boolean, days: number) => {
+    try {
+      await updateUserSettings({ autoAnalysis: enabled, autoAnalysisDays: days });
+    } catch (err) {
+      console.error('Failed to save auto analysis settings:', err);
+    }
+  }, []);
+
+  const handleAutoAnalysisToggle = (checked: boolean) => {
+    setAutoAnalysis(checked);
+    saveAutoAnalysisSettings(checked, autoAnalysisDays);
+  };
+
+  const handleAutoAnalysisDaysChange = (value: number | null) => {
+    const days = value ?? 0;
+    setAutoAnalysisDays(days);
+    saveAutoAnalysisSettings(autoAnalysis, days);
+  };
 
   // Load history when panel opens
   const loadHistory = useCallback(async () => {
@@ -87,11 +135,62 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
     }
   }, [user]);
 
+  // Auto analysis effect
+  const runAutoAnalysis = useCallback(async () => {
+    if (!user || !autoAnalysis || autoAnalysisRanRef.current || loading) return;
+
+    autoAnalysisRanRef.current = true;
+
+    try {
+      // Check if there's new data since last analysis
+      const freshness = await checkAnalysisFreshness(user.id);
+
+      if (!freshness.hasNewData) {
+        // No new data — skip auto analysis
+        return;
+      }
+
+      // Run the analysis
+      setLoading(true);
+      setError(null);
+      setCurrentHistoryIndex(-1);
+      setCurrentHistoryDate(null);
+
+      const options: AnalysisOptions = {};
+      if (autoAnalysisDays > 0) {
+        options.startFrom = 'custom';
+        options.startDate = dayjs().subtract(autoAnalysisDays, 'day').toISOString();
+      } else {
+        // 0 means from last analysis (or beginning if no prior analysis)
+        options.startFrom = freshness.latestAnalysisDate ? 'lastAnalysis' : 'beginning';
+      }
+
+      const result = await analyzeHealth(user.id, options);
+      setAnalysis(result);
+      setIsTypewriterComplete(false);
+      setIsTypewriterSkipped(false);
+      // Refresh history after new analysis
+      const history = await fetchAnalysisHistory(user.id);
+      setHistoryItems(history);
+      if (history.length > 0) {
+        setCurrentHistoryIndex(0);
+        setCurrentHistoryDate(history[0].createdAt);
+      }
+    } catch (err) {
+      console.error('Auto analysis error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, autoAnalysis, autoAnalysisDays, loading]);
+
   useEffect(() => {
     if (visible) {
-      loadHistory();
+      loadHistory().then(() => {
+        // Run auto analysis after history loads
+        runAutoAnalysis();
+      });
     }
-  }, [visible, loadHistory]);
+  }, [visible, loadHistory, runAutoAnalysis]);
 
   const handleAnalyze = async () => {
     if (!user) return;
@@ -152,8 +251,6 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  if (!visible) return null;
-
   // Animation variants based on screen size
   const variants = {
     initial: isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, x: 300 },
@@ -167,205 +264,259 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ visible, onClose }) => {
 
   return (
     <AnimatePresence>
-      <motion.div
-        className={styles.analysisPanel}
-        initial={variants.initial}
-        animate={variants.animate}
-        exit={variants.exit}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}>
-        <div className={styles.analysisPanelHeader}>
-          <div className={styles.analysisPanelTitle}>
-            <RobotOutlined className={styles.aiIcon} />
-            <Title level={4}>Analisis AI</Title>
-          </div>
-          <div className={styles.analysisPanelActions}>
-            <Button
-              type="text"
-              icon={<PlusCircleOutlined />}
-              onClick={() => setShowDateOptions(!showDateOptions)}
-              title="Analisis baru"
-            />
-            <Button type="text" icon={<CloseOutlined />} onClick={onClose} title="Tutup" />
-          </div>
-        </div>
+      {visible && (
+        <>
+          <motion.div
+            className={styles.backdrop}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className={styles.analysisPanel}
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}>
+            <div className={styles.analysisPanelHeader}>
+              <div className={styles.analysisPanelTitle}>
+                <RobotOutlined className={styles.aiIcon} />
+                <Title level={4}>Analisis AI</Title>
+              </div>
+              <div className={styles.analysisPanelActions}>
+                <Button
+                  type="text"
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => setShowDateOptions(!showDateOptions)}
+                  title="Analisis baru"
+                />
+                <Button type="text" icon={<CloseOutlined />} onClick={onClose} title="Tutup" />
+              </div>
+            </div>
 
-        {/* Date Range Options */}
-        <AnimatePresence>
-          {showDateOptions && (
-            <motion.div
-              className={styles.dateRangeSection}
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}>
-              <Divider style={{ margin: '8px 0' }} />
-              <div className={styles.dateRangeContent}>
-                <Text strong>Rentang Data untuk Analisis Baru:</Text>
-                <Space direction="vertical" size="small" style={{ width: '100%', marginTop: 8 }}>
-                  <Radio.Group value={startFrom} onChange={(e) => setStartFrom(e.target.value)} size="small">
-                    <Space direction="vertical">
-                      <Radio value="beginning">Dari awal catatan</Radio>
-                      <Radio value="lastAnalysis">Dari analisis terakhir</Radio>
-                      <Radio value="custom">Pilih tanggal</Radio>
-                    </Space>
-                  </Radio.Group>
+            {/* Auto Analysis Settings */}
+            <div className={styles.autoAnalysisSection}>
+              <div className={styles.autoAnalysisRow}>
+                <div className={styles.autoAnalysisLabel}>
+                  <ThunderboltOutlined />
+                  <Text>Auto Analisis</Text>
+                </div>
+                <Switch size="small" checked={autoAnalysis} onChange={handleAutoAnalysisToggle} />
+              </div>
+              <AnimatePresence>
+                {autoAnalysis && (
+                  <motion.div
+                    className={styles.autoAnalysisDaysRow}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}>
+                    <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                      Rentang:
+                    </Text>
+                    <Tooltip title="0 = dari analisis terakhir. Isi angka untuk rentang hari, misal 12 = 12 hari terakhir.">
+                      <InputNumber
+                        size="small"
+                        min={0}
+                        max={365}
+                        value={autoAnalysisDays}
+                        onChange={handleAutoAnalysisDaysChange}
+                        style={{ width: 60 }}
+                      />
+                    </Tooltip>
+                    <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                      {autoAnalysisDays === 0 ? ' ->  dari analisis terakhir' : `hari terakhir`}
+                    </Text>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-                  {startFrom === 'custom' && (
-                    <Space size="small" style={{ marginTop: 8 }}>
-                      <DatePicker
-                        placeholder="Mulai dari"
-                        value={customStartDate}
-                        onChange={setCustomStartDate}
-                        size="small"
-                        style={{ width: 120 }}
-                      />
-                      <span>-</span>
-                      <DatePicker
-                        placeholder="Sampai"
-                        value={customEndDate}
-                        onChange={setCustomEndDate}
-                        size="small"
-                        style={{ width: 120 }}
-                      />
+            {/* Date Range Options */}
+            <AnimatePresence>
+              {showDateOptions && (
+                <motion.div
+                  className={styles.dateRangeSection}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}>
+                  <Divider style={{ margin: '8px 0' }} />
+                  <div className={styles.dateRangeContent}>
+                    <Space style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text strong>Rentang Data untuk Analisis Baru:</Text>
+                      <Button type="text" icon={<CloseOutlined />} onClick={() => setShowDateOptions(false)} />
                     </Space>
+                    <Space orientation="vertical" size="small" style={{ width: '100%', marginTop: 8 }}>
+                      <Radio.Group value={startFrom} onChange={(e) => setStartFrom(e.target.value)} size="small">
+                        <Space orientation="vertical">
+                          <Radio value="beginning">Dari awal catatan</Radio>
+                          <Radio value="lastAnalysis">Dari analisis terakhir</Radio>
+                          <Radio value="custom">Pilih tanggal</Radio>
+                        </Space>
+                      </Radio.Group>
+
+                      {startFrom === 'custom' && (
+                        <Space size="small" style={{ marginTop: 8 }}>
+                          <DatePicker
+                            placeholder="Mulai dari"
+                            value={customStartDate}
+                            onChange={setCustomStartDate}
+                            size="small"
+                            style={{ width: 120 }}
+                          />
+                          <span>-</span>
+                          <DatePicker
+                            placeholder="Sampai"
+                            value={customEndDate}
+                            onChange={setCustomEndDate}
+                            size="small"
+                            style={{ width: 120 }}
+                          />
+                        </Space>
+                      )}
+
+                      {startFrom !== 'custom' && (
+                        <Space size="small" style={{ marginTop: 8 }}>
+                          <Text type="secondary">Sampai:</Text>
+                          <DatePicker
+                            placeholder="Hari ini"
+                            value={customEndDate}
+                            onChange={setCustomEndDate}
+                            size="small"
+                            style={{ width: 130 }}
+                          />
+                        </Space>
+                      )}
+
+                      <Button
+                        type="primary"
+                        icon={<PlayCircleOutlined />}
+                        onClick={handleAnalyze}
+                        loading={loading}
+                        disabled={loading}
+                        style={{ marginTop: 12 }}>
+                        Mulai Analisis Baru
+                      </Button>
+                    </Space>
+                  </div>
+                  <Divider style={{ margin: '8px 0' }} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* History Navigation */}
+            {hasHistory && currentHistoryDate && (
+              <div className={styles.historyNavigation}>
+                <Button
+                  type="text"
+                  icon={<LeftOutlined />}
+                  disabled={!canGoPrev || loadingHistory}
+                  onClick={() => navigateHistory('prev')}
+                  size="small"
+                />
+                <div className={styles.historyInfo}>
+                  <HistoryOutlined />
+                  <Text type="secondary">
+                    {dayjs(currentHistoryDate).format('DD MMM YYYY, HH:mm')}
+                    {currentHistoryIndex === 0 && ' (Terbaru)'}
+                  </Text>
+                </div>
+                <Button
+                  type="text"
+                  icon={<RightOutlined />}
+                  disabled={!canGoNext || loadingHistory}
+                  onClick={() => navigateHistory('next')}
+                  size="small"
+                />
+              </div>
+            )}
+
+            <div className={styles.analysisPanelContent}>
+              {loading || loadingHistory ? (
+                <div className={styles.analysisLoading}>
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} />
+                  <Text type="secondary">
+                    {loading ? 'Menganalisis data kesehatan Anda...' : 'Memuat riwayat analisis...'}
+                  </Text>
+                </div>
+              ) : error ? (
+                <div className={styles.analysisError}>
+                  <Empty description={error} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Button type="primary" onClick={handleAnalyze}>
+                    Coba Lagi
+                  </Button>
+                </div>
+              ) : analysis ? (
+                <>
+                  <div className={styles.analysisSection}>
+                    <div className={styles.analysisSectionHeader}>
+                      <Title level={5}>
+                        <RobotOutlined /> Ringkasan Analisis
+                      </Title>
+                    </div>
+                    <div className={styles.analysisText}>
+                      {isTypewriterComplete ? (
+                        analysis.analysis || 'Tidak ada analisis tersedia.'
+                      ) : (
+                        <Typewriter
+                          text={analysis.analysis || 'Tidak ada analisis tersedia.'}
+                          speed={15}
+                          isSkipped={isTypewriterSkipped}
+                          onComplete={() => setIsTypewriterComplete(true)}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {analysis.recommendations && analysis.recommendations.length > 0 && isTypewriterComplete && (
+                    <div className={styles.analysisSection}>
+                      <Title level={5}>
+                        <BulbOutlined /> Rekomendasi Langkah Selanjutnya
+                      </Title>
+                      <ul className={styles.recommendationsList}>
+                        {analysis.recommendations.map((rec, index) => (
+                          <motion.li
+                            key={generateKeyEl(rec.slice(0, 20), index)}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.15 }}>
+                            <span className={styles.recNumber}>{index + 1}</span>
+                            <span className={styles.recText}>{formatBoldText(rec)}</span>
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-
-                  {startFrom !== 'custom' && (
-                    <Space size="small" style={{ marginTop: 8 }}>
-                      <Text type="secondary">Sampai:</Text>
-                      <DatePicker
-                        placeholder="Hari ini"
-                        value={customEndDate}
-                        onChange={setCustomEndDate}
-                        size="small"
-                        style={{ width: 130 }}
-                      />
-                    </Space>
-                  )}
-
+                </>
+              ) : (
+                <div className={styles.noAnalysis}>
+                  <Empty
+                    image={<RobotOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />}
+                    description={
+                      <div>
+                        <Text>Belum ada riwayat analisis.</Text>
+                        <br />
+                        <Text type="secondary">Pilih rentang tanggal dan mulai analisis pertama Anda.</Text>
+                      </div>
+                    }
+                  />
                   <Button
                     type="primary"
+                    size="large"
                     icon={<PlayCircleOutlined />}
-                    onClick={handleAnalyze}
-                    loading={loading}
-                    style={{ marginTop: 12 }}>
-                    Mulai Analisis Baru
+                    onClick={() => setShowDateOptions(true)}
+                    style={{ marginTop: 16 }}>
+                    Mulai Analisis
                   </Button>
-                </Space>
-              </div>
-              <Divider style={{ margin: '8px 0' }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* History Navigation */}
-        {hasHistory && currentHistoryDate && (
-          <div className={styles.historyNavigation}>
-            <Button
-              type="text"
-              icon={<LeftOutlined />}
-              disabled={!canGoPrev || loadingHistory}
-              onClick={() => navigateHistory('prev')}
-              size="small"
-            />
-            <div className={styles.historyInfo}>
-              <HistoryOutlined />
-              <Text type="secondary">
-                {dayjs(currentHistoryDate).format('DD MMM YYYY, HH:mm')}
-                {currentHistoryIndex === 0 && ' (Terbaru)'}
-              </Text>
-            </div>
-            <Button
-              type="text"
-              icon={<RightOutlined />}
-              disabled={!canGoNext || loadingHistory}
-              onClick={() => navigateHistory('next')}
-              size="small"
-            />
-          </div>
-        )}
-
-        <div className={styles.analysisPanelContent}>
-          {loading || loadingHistory ? (
-            <div className={styles.analysisLoading}>
-              <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} />
-              <Text type="secondary">
-                {loading ? 'Menganalisis data kesehatan Anda...' : 'Memuat riwayat analisis...'}
-              </Text>
-            </div>
-          ) : error ? (
-            <div className={styles.analysisError}>
-              <Empty description={error} image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              <Button type="primary" onClick={handleAnalyze}>
-                Coba Lagi
-              </Button>
-            </div>
-          ) : analysis ? (
-            <>
-              <div className={styles.analysisSection}>
-                <div className={styles.analysisSectionHeader}>
-                  <Title level={5}>
-                    <RobotOutlined /> Ringkasan Analisis
-                  </Title>
-                </div>
-                <div className={styles.analysisText}>
-                  {isTypewriterComplete ? (
-                    analysis.analysis || 'Tidak ada analisis tersedia.'
-                  ) : (
-                    <Typewriter
-                      text={analysis.analysis || 'Tidak ada analisis tersedia.'}
-                      speed={15}
-                      isSkipped={isTypewriterSkipped}
-                      onComplete={() => setIsTypewriterComplete(true)}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {analysis.recommendations && analysis.recommendations.length > 0 && isTypewriterComplete && (
-                <div className={styles.analysisSection}>
-                  <Title level={5}>
-                    <BulbOutlined /> Rekomendasi Langkah Selanjutnya
-                  </Title>
-                  <ul className={styles.recommendationsList}>
-                    {analysis.recommendations.map((rec, index) => (
-                      <motion.li
-                        key={generateKeyEl(rec.slice(0, 20), index)}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.15 }}>
-                        <span className={styles.recNumber}>{index + 1}</span>
-                        <span className={styles.recText}>{formatBoldText(rec)}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
                 </div>
               )}
-            </>
-          ) : (
-            <div className={styles.noAnalysis}>
-              <Empty
-                image={<RobotOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />}
-                description={
-                  <div>
-                    <Text>Belum ada riwayat analisis.</Text>
-                    <br />
-                    <Text type="secondary">Pilih rentang tanggal dan mulai analisis pertama Anda.</Text>
-                  </div>
-                }
-              />
-              <Button
-                type="primary"
-                size="large"
-                icon={<PlayCircleOutlined />}
-                onClick={() => setShowDateOptions(true)}
-                style={{ marginTop: 16 }}>
-                Mulai Analisis
-              </Button>
             </div>
-          )}
-        </div>
-      </motion.div>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
 };

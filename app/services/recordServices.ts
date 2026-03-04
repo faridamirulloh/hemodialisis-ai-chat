@@ -2,6 +2,31 @@ import type { HealthRecord, RecordFilter } from '~/types/record';
 
 const API_BASE = '/api/records';
 
+export async function updateUserSettings(data: Record<string, unknown>): Promise<void> {
+  const response = await fetch('/api/user', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update user settings');
+  }
+}
+
+export interface AnalysisFreshness {
+  hasNewData: boolean;
+  latestRecordDate: string | null;
+  latestAnalysisDate: string | null;
+}
+
+export async function checkAnalysisFreshness(userId: string): Promise<AnalysisFreshness> {
+  const response = await fetch(`/api/analyze?userId=${userId}`);
+  if (!response.ok) {
+    throw new Error('Failed to check analysis freshness');
+  }
+  return response.json();
+}
+
 export async function fetchRecords(filter?: RecordFilter, userId?: string): Promise<HealthRecord[]> {
   const params = new URLSearchParams();
 

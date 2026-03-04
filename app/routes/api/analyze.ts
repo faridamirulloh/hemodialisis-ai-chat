@@ -1,6 +1,39 @@
 import { Chat } from '~/constant/api';
 import prisma from '~/lib/prisma.server';
 
+export async function loader({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('userId');
+
+  if (!userId) {
+    return Response.json({ error: 'userId is required' }, { status: 400 });
+  }
+
+  // Get the most recent record date for this user
+  const latestRecord = await prisma.record.findFirst({
+    where: { userId },
+    orderBy: { date: 'desc' },
+    select: { date: true },
+  });
+
+  // Get the most recent analysis session date for this user
+  const latestAnalysis = await prisma.chatSession.findFirst({
+    where: {
+      id: { startsWith: `health-analysis-${userId}` },
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: { updatedAt: true },
+  });
+
+  const latestRecordDate = latestRecord?.date?.toISOString() || null;
+  const latestAnalysisDate = latestAnalysis?.updatedAt?.toISOString() || null;
+
+  // Has new data if: there are records AND (no analysis exists OR latest record is newer than latest analysis)
+  const hasNewData = latestRecord ? !latestAnalysis || latestRecord.date > latestAnalysis.updatedAt : false;
+
+  return Response.json({ hasNewData, latestRecordDate, latestAnalysisDate });
+}
+
 export async function action({ request }: { request: Request }) {
   try {
     const body = await request.json();
@@ -97,24 +130,66 @@ export async function action({ request }: { request: Request }) {
     // Prepare summary for AI
     const summary = prepareHealthSummary(records);
 
-    console.log(summary);
+    // Fetch previous analysis for comparison
+    let previousAnalysisText = '';
+    const lastAnalysisSession = await prisma.chatSession.findFirst({
+      where: {
+        id: { startsWith: `health-analysis-` },
+      },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, updatedAt: true },
+    });
+
+    if (lastAnalysisSession) {
+      const lastMessages = await prisma.chatHistory.findMany({
+        where: { sessionId: lastAnalysisSession.id },
+        orderBy: { id: 'asc' },
+      });
+      const aiMsg = lastMessages.find((m) => {
+        const msg = m.message as { type?: string };
+        return msg.type === 'ai';
+      });
+      if (aiMsg) {
+        try {
+          const msgData = aiMsg.message as { content?: string };
+          const text = msgData.content || '';
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            previousAnalysisText = parsed.analysis || text;
+          } else {
+            previousAnalysisText = text;
+          }
+        } catch {
+          previousAnalysisText = '';
+        }
+      }
+    }
+
+    const previousSection = previousAnalysisText
+      ? `\n\n=== ANALISIS SEBELUMNYA (${lastAnalysisSession ? new Date(lastAnalysisSession.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}) ===\n${previousAnalysisText}`
+      : '';
 
     // Send to AI for analysis
     const aiPrompt = `Kamu adalah asisten kesehatan AI yang khusus membantu pasien hemodialisis. 
 Berikut adalah ringkasan data kesehatan saya dari ${records.length} catatan terakhir:
 
-${summary}
+${summary}${previousSection}
 
 Berdasarkan data di atas, berikan:
 1. Analisis kondisi kesehatan saya secara keseluruhan (dalam 2-3 paragraf)
-2. 5 rekomendasi langkah nyata yang bisa saya lakukan untuk memperbaiki kesehatan saya
+2. Perbandingan dengan analisis sebelumnya (jika ada): apakah kondisi pasien membaik, stabil, atau memburuk? Jelaskan indikator-indikator spesifik yang menunjukkan perubahan tersebut.
+3. 5 rekomendasi langkah nyata yang bisa saya lakukan untuk memperbaiki kesehatan saya
 
 Format respons dalam JSON:
 {
   "analysis": "...",
   "recommendations": ["...", "...", "...", "...", "..."]
-}`;
+}
 
+PENTING: Di bagian "analysis", sertakan paragraf khusus tentang perbandingan kondisi (membaik/stabil/memburuk) dengan data sebelumnya jika tersedia.`;
+
+    console.log(aiPrompt);
     const aiResponse = await fetch(Chat.POST.Prompt, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
