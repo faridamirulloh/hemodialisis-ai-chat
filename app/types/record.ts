@@ -1,14 +1,11 @@
-export type SeverityLevel = 'low' | 'medium' | 'critical';
 export type RecordCategory = 'general' | 'dialysis' | 'lab' | 'symptoms';
 export type MoodType = 'good' | 'neutral' | 'bad';
 export type ViewMode = 'timeline' | 'cards' | 'calendar';
 export type DialysisType = 'HD' | 'PD' | 'HDF';
-export type AccessType = 'AVF' | 'AVG' | 'Catheter';
 export type LabFlag = 'normal' | 'low' | 'high';
 
 export interface Symptom {
   name: string;
-  severity: SeverityLevel;
 }
 
 export interface DialysisSchedule {
@@ -16,7 +13,6 @@ export interface DialysisSchedule {
   duration: number; // in minutes
   type: DialysisType;
   location?: string;
-  accessType?: AccessType;
   dryWeight?: number;
   ultrafiltration?: number;
 }
@@ -50,6 +46,7 @@ export interface HealthRecord {
   labResults?: LabResult[];
   bloodPressure?: BloodPressure;
   weight?: number;
+  height?: number;
   fluidIntake?: number;
   dietNotes?: string;
   medications?: Medication[];
@@ -64,7 +61,6 @@ export interface RecordFilter {
   dateFrom?: string;
   dateTo?: string;
   category?: RecordCategory;
-  severity?: SeverityLevel;
   searchTerm?: string;
 }
 

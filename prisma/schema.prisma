@@ -53,6 +53,7 @@ model Record {
   labResults       Json?    @map("lab_results")
   bloodPressure    Json?    @map("blood_pressure")
   weight           Float?
+  height           Float?
   fluidIntake      Float?   @map("fluid_intake")
   dietNotes        String?  @map("diet_notes")
   medications      Json?

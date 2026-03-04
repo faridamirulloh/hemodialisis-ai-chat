@@ -1,6 +1,5 @@
 import { data } from 'react-router';
 import type { Route } from './+types/records';
-import type { Symptom } from '~/types/record';
 import prisma from '~/lib/prisma.server';
 
 // GET - Fetch records with filtering
@@ -9,7 +8,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const dateFrom = url.searchParams.get('dateFrom');
   const dateTo = url.searchParams.get('dateTo');
   const category = url.searchParams.get('category');
-  const severity = url.searchParams.get('severity');
+
   const search = url.searchParams.get('search');
 
   // Get userId from query params - required for filtering
@@ -51,16 +50,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       orderBy: { date: 'desc' },
     });
 
-    // Filter by severity if specified (needs post-processing since symptoms is JSON)
-    let filteredRecords = records;
-    if (severity) {
-      filteredRecords = records.filter((record) => {
-        const symptoms = record.symptoms as Symptom[] | null;
-        return symptoms?.some((s) => s.severity === severity);
-      });
-    }
-
-    return data(filteredRecords, { status: 200 });
+    return data(records, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch records:', error);
     return data({ error: 'Failed to fetch records' }, { status: 500 });
@@ -92,6 +82,7 @@ export async function action({ request }: Route.ActionArgs) {
           labResults: body.labResults || null,
           bloodPressure: body.bloodPressure || null,
           weight: body.weight || null,
+          height: body.height || null,
           fluidIntake: body.fluidIntake || null,
           dietNotes: body.dietNotes || null,
           medications: body.medications || null,
@@ -125,6 +116,7 @@ export async function action({ request }: Route.ActionArgs) {
           labResults: updateData.labResults,
           bloodPressure: updateData.bloodPressure,
           weight: updateData.weight,
+          height: updateData.height,
           fluidIntake: updateData.fluidIntake,
           dietNotes: updateData.dietNotes,
           medications: updateData.medications,

@@ -366,6 +366,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ records, onEdit, onDelete, 
                     <span className={styles.statValue}>{currentRecord.weight} kg</span>
                   </div>
                 )}
+                {currentRecord.height && (
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Tinggi Badan</span>
+                    <span className={styles.statValue}>{currentRecord.height} cm</span>
+                  </div>
+                )}
                 {currentRecord.fluidIntake && (
                   <div className={styles.statItem}>
                     <span className={styles.statLabel}>Cairan</span>
@@ -392,7 +398,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ records, onEdit, onDelete, 
                   <h4>Gejala</h4>
                   <div className={styles.symptomsList}>
                     {currentRecord.symptoms.map((symptom) => (
-                      <span key={symptom.name} className={`${styles.symptomChip} ${styles[symptom.severity]}`}>
+                      <span key={symptom.name} className={styles.symptomChip}>
                         {symptom.name}
                       </span>
                     ))}

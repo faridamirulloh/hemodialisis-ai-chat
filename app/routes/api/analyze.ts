@@ -167,6 +167,7 @@ interface RecordData {
   symptoms: unknown;
   bloodPressure: unknown;
   weight: number | null;
+  height: number | null;
   fluidIntake: number | null;
   mood: string | null;
   labResults: unknown;
@@ -209,15 +210,20 @@ function prepareHealthSummary(records: RecordData[]): string {
       lines.push(`   • Berat badan: ${record.weight} kg`);
     }
 
+    // Height
+    if (record.height) {
+      lines.push(`   • Tinggi badan: ${record.height} cm`);
+    }
+
     // Fluid intake
     if (record.fluidIntake) {
       lines.push(`   • Asupan cairan: ${record.fluidIntake} ml`);
     }
 
     // Symptoms
-    const symptoms = record.symptoms as { name: string; severity: string }[] | null;
+    const symptoms = record.symptoms as { name: string }[] | null;
     if (symptoms && Array.isArray(symptoms) && symptoms.length > 0) {
-      const symptomList = symptoms.map((s) => `${s.name} (${s.severity})`).join(', ');
+      const symptomList = symptoms.map((s) => s.name).join(', ');
       lines.push(`   • Gejala: ${symptomList}`);
     }
 
@@ -300,7 +306,7 @@ function prepareHealthSummary(records: RecordData[]): string {
   // Most common symptoms
   const symptomCounts: Record<string, number> = {};
   sortedRecords.forEach((r) => {
-    const symptoms = r.symptoms as { name: string; severity: string }[] | null;
+    const symptoms = r.symptoms as { name: string }[] | null;
     if (symptoms && Array.isArray(symptoms)) {
       symptoms.forEach((s) => {
         symptomCounts[s.name] = (symptomCounts[s.name] || 0) + 1;

@@ -69,7 +69,7 @@ const CardsView: React.FC<CardsViewProps> = ({ records, onEdit, onDelete }) => {
                 {record.symptoms && record.symptoms.length > 0 && (
                   <div className={styles.symptomsPreview}>
                     {record.symptoms.map((symptom, idx) => (
-                      <span key={idx} className={`${styles.symptomChip} ${styles[symptom.severity]}`}>
+                      <span key={idx} className={styles.symptomChip}>
                         {symptom.name}
                       </span>
                     ))}
@@ -99,6 +99,7 @@ const CardsView: React.FC<CardsViewProps> = ({ records, onEdit, onDelete }) => {
                     </span>
                   )}
                   {record.weight && <span className={styles.stat}>⚖️ {record.weight} kg</span>}
+                  {record.height && <span className={styles.stat}>📏 {record.height} cm</span>}
                   {record.fluidIntake && <span className={styles.stat}>💧 {record.fluidIntake} ml</span>}
                   {record.mood && (
                     <span className={styles.stat}>

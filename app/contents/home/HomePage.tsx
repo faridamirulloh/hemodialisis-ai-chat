@@ -28,7 +28,7 @@ const HomePage = () => {
           {isAuthenticated && (
             <Typography.Title className={styles.userWelcome}>Selamat Datang, {user?.name}!</Typography.Title>
           )}
-          <Image preview={false} src="/logo.png" />
+          <Image className={styles.heroIcon} preview={false} src="/logo.png" />
           <Typography.Title className={styles.heroTitle}>Asisten AI Hemodialisis</Typography.Title>
           <Typography.Paragraph className={styles.heroSubtitle}>
             Memberdayakan pasien dan profesional perawatan kesehatan dengan wawasan berbasis AI untuk perawatan dialisis

@@ -10,7 +10,6 @@ import {
   type HealthRecord,
   type Symptom,
   type LabResult,
-  type SeverityLevel,
   type MoodType,
   LAB_TEST_CATEGORIES,
   LAB_NORMAL_RANGES,
@@ -38,12 +37,6 @@ const DIALYSIS_TYPE_OPTIONS = [
   { value: 'HD', label: 'Hemodialisis (HD)' },
   { value: 'PD', label: 'Peritoneal Dialisis (PD)' },
   { value: 'HDF', label: 'Hemodiafiltration (HDF)' },
-];
-
-const ACCESS_TYPE_OPTIONS = [
-  { value: 'AVF', label: 'Arteriovenous Fistula (AVF)' },
-  { value: 'AVG', label: 'Arteriovenous Graft (AVG)' },
-  { value: 'Catheter', label: 'Catheter' },
 ];
 
 const ALL_LAB_TESTS = Object.values(LAB_TEST_CATEGORIES).flat();
@@ -83,7 +76,6 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
           'dialysisSchedule.type': record.dialysisSchedule?.type,
           'dialysisSchedule.duration': record.dialysisSchedule?.duration,
           'dialysisSchedule.location': record.dialysisSchedule?.location,
-          'dialysisSchedule.accessType': record.dialysisSchedule?.accessType,
         });
         setSelectedSymptoms(record.symptoms || []);
         setLabResults(record.labResults || []);
@@ -110,6 +102,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
                 const prefilled: string[] = [];
 
                 if (lastRecord.weight) prefilled.push('weight');
+                if (lastRecord.height) prefilled.push('height');
                 if (lastRecord.fluidIntake) prefilled.push('fluidIntake');
                 if (lastRecord.bloodPressure?.systolic) prefilled.push('bloodPressure.systolic');
                 if (lastRecord.bloodPressure?.diastolic) prefilled.push('bloodPressure.diastolic');
@@ -117,6 +110,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
 
                 form.setFieldsValue({
                   weight: lastRecord.weight,
+                  height: lastRecord.height,
                   fluidIntake: lastRecord.fluidIntake,
                   'bloodPressure.systolic': lastRecord.bloodPressure?.systolic,
                   'bloodPressure.diastolic': lastRecord.bloodPressure?.diastolic,
@@ -149,24 +143,20 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
     if (existing) {
       setSelectedSymptoms(selectedSymptoms.filter((s) => s.name !== symptomName));
     } else {
-      setSelectedSymptoms([...selectedSymptoms, { name: symptomName, severity: 'low' }]);
+      setSelectedSymptoms([...selectedSymptoms, { name: symptomName }]);
     }
   };
 
   const handleAddCustomSymptom = () => {
     const trimmed = customSymptom.trim();
     if (trimmed && !selectedSymptoms.find((s) => s.name === trimmed)) {
-      setSelectedSymptoms([...selectedSymptoms, { name: trimmed, severity: 'low' }]);
+      setSelectedSymptoms([...selectedSymptoms, { name: trimmed }]);
       setCustomSymptom('');
     }
   };
 
   const handleRemoveSymptom = (symptomName: string) => {
     setSelectedSymptoms(selectedSymptoms.filter((s) => s.name !== symptomName));
-  };
-
-  const handleSymptomSeverityChange = (symptomName: string, severity: SeverityLevel) => {
-    setSelectedSymptoms(selectedSymptoms.map((s) => (s.name === symptomName ? { ...s, severity } : s)));
   };
 
   const addLabResult = () => {
@@ -225,7 +215,6 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
               type: values['dialysisSchedule.type'],
               duration: values['dialysisSchedule.duration'],
               location: values['dialysisSchedule.location'],
-              accessType: values['dialysisSchedule.accessType'],
             }
           : undefined;
 
@@ -237,6 +226,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
         bloodPressure,
         dialysisSchedule,
         weight: values.weight,
+        height: values.height,
         fluidIntake: values.fluidIntake,
         dietNotes: values.dietNotes,
         note: values.note,
@@ -295,25 +285,9 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
               return (
                 <Tag
                   key={symptom}
-                  className={`${styles.symptomTag} ${selected ? styles.selected : ''} ${
-                    selected ? styles[selected.severity] : ''
-                  }`}
+                  className={`${styles.symptomTag} ${selected ? styles.selected : ''}`}
                   onClick={() => handleSymptomToggle(symptom)}>
                   {symptom}
-                  {selected && (
-                    <Select
-                      size="small"
-                      value={selected.severity}
-                      onChange={(v) => handleSymptomSeverityChange(symptom, v)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ width: 80, marginLeft: 4 }}
-                      options={[
-                        { value: 'low', label: 'Ringan' },
-                        { value: 'medium', label: 'Sedang' },
-                        { value: 'critical', label: 'Kritis' },
-                      ]}
-                    />
-                  )}
                 </Tag>
               );
             })}
@@ -323,22 +297,10 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
               .map((symptom) => (
                 <Tag
                   key={symptom.name}
-                  className={`${styles.symptomTag} ${styles.selected} ${styles[symptom.severity]}`}
+                  className={`${styles.symptomTag} ${styles.selected}`}
                   closable
                   onClose={() => handleRemoveSymptom(symptom.name)}>
                   {symptom.name}
-                  <Select
-                    size="small"
-                    value={symptom.severity}
-                    onChange={(v) => handleSymptomSeverityChange(symptom.name, v)}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ width: 80, marginLeft: 4 }}
-                    options={[
-                      { value: 'low', label: 'Ringan' },
-                      { value: 'medium', label: 'Sedang' },
-                      { value: 'critical', label: 'Kritis' },
-                    ]}
-                  />
                 </Tag>
               ))}
           </div>
@@ -403,7 +365,7 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
           </Divider>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="weight" label={renderLabel('Berat Badan (kg)', 'weight')}>
                 <InputNumber
                   defaultValue={0}
@@ -415,7 +377,18 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
+              <Form.Item name="height" label={renderLabel('Tinggi Badan (cm)', 'height')}>
+                <InputNumber
+                  min={0}
+                  max={300}
+                  step={0.1}
+                  style={{ width: '100%' }}
+                  onChange={() => handleFieldChange('height')}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item name="fluidIntake" label={renderLabel('Asupan Cairan (ml/hari)', 'fluidIntake')}>
                 <InputNumber
                   min={0}
@@ -433,19 +406,14 @@ const RecordForm: React.FC<RecordFormProps> = ({ visible, record, initialDate, o
           </Divider>
 
           <Row gutter={16}>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item name="dialysisSchedule.type" label="Jenis Dialisis">
                 <Select options={DIALYSIS_TYPE_OPTIONS} allowClear />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item name="dialysisSchedule.duration" label="Durasi (menit)">
                 <InputNumber min={0} max={600} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="dialysisSchedule.accessType" label="Akses">
-                <Select options={ACCESS_TYPE_OPTIONS} allowClear />
               </Form.Item>
             </Col>
           </Row>

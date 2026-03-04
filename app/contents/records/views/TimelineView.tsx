@@ -32,22 +32,6 @@ function groupByDate(records: HealthRecord[]): Map<string, HealthRecord[]> {
   return groups;
 }
 
-// Get highest severity from symptoms
-function getHighestSeverity(record: HealthRecord): string {
-  if (!record.symptoms || record.symptoms.length === 0) return 'low';
-
-  const severityOrder = { critical: 3, medium: 2, low: 1 };
-  let highest = 'low';
-
-  record.symptoms.forEach((symptom) => {
-    if (severityOrder[symptom.severity] > severityOrder[highest as keyof typeof severityOrder]) {
-      highest = symptom.severity;
-    }
-  });
-
-  return highest;
-}
-
 const TimelineView: React.FC<TimelineViewProps> = ({ records, onEdit, onDelete }) => {
   const groupedRecords = groupByDate(records);
 
@@ -71,7 +55,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ records, onEdit, onDelete }
             {dateRecords.map((record) => (
               <motion.div
                 key={record.id}
-                className={`${styles.timelineItem} ${styles[getHighestSeverity(record)]}`}
+                className={styles.timelineItem}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2 }}>
@@ -90,7 +74,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ records, onEdit, onDelete }
                     {record.symptoms && record.symptoms.length > 0 && (
                       <div className={styles.symptomsPreview}>
                         {record.symptoms.slice(0, 3).map((symptom, idx) => (
-                          <span key={idx} className={`${styles.symptomChip} ${styles[symptom.severity]}`}>
+                          <span key={idx} className={styles.symptomChip}>
                             {symptom.name}
                           </span>
                         ))}
@@ -109,6 +93,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ records, onEdit, onDelete }
                         </span>
                       )}
                       {record.weight && <span className={styles.stat}>⚖️ {record.weight} kg</span>}
+                      {record.height && <span className={styles.stat}>📏 {record.height} cm</span>}
                       {record.mood && (
                         <span className={styles.stat}>
                           {record.mood === 'good' ? '😊' : record.mood === 'neutral' ? '😐' : '😔'}

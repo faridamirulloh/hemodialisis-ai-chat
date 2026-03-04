@@ -9,7 +9,7 @@ export async function fetchRecords(filter?: RecordFilter, userId?: string): Prom
   if (filter?.dateFrom) params.append('dateFrom', filter.dateFrom);
   if (filter?.dateTo) params.append('dateTo', filter.dateTo);
   if (filter?.category) params.append('category', filter.category);
-  if (filter?.severity) params.append('severity', filter.severity);
+
   if (filter?.searchTerm) params.append('search', filter.searchTerm);
 
   const queryString = params.toString();

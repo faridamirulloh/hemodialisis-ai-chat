@@ -2,7 +2,7 @@ import React from 'react';
 import { SearchOutlined, ClearOutlined } from '@ant-design/icons';
 import { Input, DatePicker, Select, Button, Typography } from 'antd';
 import styles from './FilterPanel.module.scss';
-import type { RecordFilter, RecordCategory, SeverityLevel } from '~/types/record';
+import type { RecordFilter, RecordCategory } from '~/types/record';
 
 interface FilterPanelProps {
   filter: RecordFilter;
@@ -17,12 +17,6 @@ const CATEGORY_OPTIONS = [
   { value: 'dialysis', label: 'Dialisis' },
   { value: 'lab', label: 'Lab' },
   { value: 'symptoms', label: 'Gejala' },
-];
-
-const SEVERITY_OPTIONS = [
-  { value: 'low', label: 'Ringan' },
-  { value: 'medium', label: 'Sedang' },
-  { value: 'critical', label: 'Kritis' },
 ];
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ filter, onChange, onClear }) => {
@@ -50,11 +44,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filter, onChange, onClear }) 
     onChange({ ...filter, category: value });
   };
 
-  const handleSeverityChange = (value: SeverityLevel | undefined) => {
-    onChange({ ...filter, severity: value });
-  };
-
-  const hasActiveFilters = filter.searchTerm || filter.dateFrom || filter.dateTo || filter.category || filter.severity;
+  const hasActiveFilters = filter.searchTerm || filter.dateFrom || filter.dateTo || filter.category;
 
   return (
     <div className={styles.filterPanel}>
@@ -82,18 +72,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filter, onChange, onClear }) 
             options={CATEGORY_OPTIONS}
             value={filter.category}
             onChange={handleCategoryChange}
-            allowClear
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div className={styles.filterItem}>
-          <Typography.Text>Tingkat Keparahan</Typography.Text>
-          <Select
-            placeholder="Semua tingkat"
-            options={SEVERITY_OPTIONS}
-            value={filter.severity}
-            onChange={handleSeverityChange}
             allowClear
             style={{ width: '100%' }}
           />
