@@ -2,6 +2,7 @@ services:
   app-hemodialysis:
     container_name: app-hemodialysis
     image: hemodialisis-app:latest
+    restart: always
     ports:
       - '9999:3000'
     environment:
