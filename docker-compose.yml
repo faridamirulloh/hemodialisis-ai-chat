@@ -10,3 +10,11 @@ services:
       - SESSION_SECRET=aridevianto_super_long_random_secret_@123
       - N8N_CHAT_URL=http://192.168.1.99:5678/webhook/bf4dd093-bb02-472c-9454-7ab9af97bd1d
       - NODE_ENV=production
+      - USER_EMAIL=aridevianto23@gmail.com
+      - USER_PASSWORD=Airazivara@123
+      - USER_NAME=Ari DevianTo
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=aridevianto23@gmail.com
+      - SMTP_PASS=lhrkxcnijcflfign
+      - SMTP_FROM=aridevianto23@gmail.com

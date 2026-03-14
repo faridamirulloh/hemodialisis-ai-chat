@@ -44,7 +44,7 @@ const AuthPage: React.FC = () => {
         body: JSON.stringify({ email: values.email }),
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         message.success(data.message || 'Kode reset dikirim ke email Anda.');
         setResetEmail(values.email);
@@ -63,7 +63,7 @@ const AuthPage: React.FC = () => {
       message.error('Password tidak cocok!');
       return;
     }
-    
+
     setLoading(true);
     try {
       const response = await fetch('/api/reset-password', {
@@ -76,7 +76,7 @@ const AuthPage: React.FC = () => {
         }),
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         message.success(data.message || 'Password berhasil diubah!');
         setMode('login');
@@ -92,10 +92,14 @@ const AuthPage: React.FC = () => {
 
   const getTitle = () => {
     switch (mode) {
-      case 'signup': return 'Buat Akun';
-      case 'forgot-password': return 'Lupa Password';
-      case 'reset-password': return 'Reset Password';
-      default: return 'Login';
+      case 'signup':
+        return 'Buat Akun';
+      case 'forgot-password':
+        return 'Lupa Password';
+      case 'reset-password':
+        return 'Reset Password';
+      default:
+        return 'Login';
     }
   };
 
