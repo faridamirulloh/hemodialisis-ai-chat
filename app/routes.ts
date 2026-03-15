@@ -14,4 +14,5 @@ export default [
   route('/api/metrics', 'routes/api/metrics.ts'),
   route('/api/forgot-password', 'routes/api/forgot-password.ts'),
   route('/api/reset-password', 'routes/api/reset-password.ts'),
+  route('/api/logout', 'routes/api/logout.ts'),
 ] satisfies RouteConfig;

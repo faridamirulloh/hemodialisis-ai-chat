@@ -1,20 +1,11 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Create transporter using SMTP settings from environment
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend('re_MEH1hP2J_GK8HzjvFsBxbH8SnRDtnH6yE');
 
 export async function sendPasswordResetEmail(email: string, code: string): Promise<boolean> {
   try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    await resend.emails.send({
+      from: 'AsistenHemodialysis@aridevianto.my.id',
       to: email,
       subject: 'Kode Reset Password - Hemodialysis App',
       html: `
