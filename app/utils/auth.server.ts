@@ -9,7 +9,7 @@ export async function checkEmailExists(email: string): Promise<boolean> {
 
 export async function signup({ email, name, password }: { email: string; name: string; password: string }) {
   // Check if email already exists
-  const emailExists = await checkEmailExists(email);
+  const emailExists = await checkEmailExists(email.toLowerCase());
   if (emailExists) {
     return { error: 'Email sudah terdaftar!' };
   }

@@ -8,11 +8,13 @@ export async function action({ request }: { request: Request }) {
 
   try {
     const body = await request.json();
-    const { email } = body;
+    let { email } = body;
 
     if (!email) {
       return Response.json({ error: 'Email diperlukan' }, { status: 400 });
     }
+
+    email = email.toLowerCase();
 
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { email } });
