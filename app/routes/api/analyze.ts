@@ -177,14 +177,14 @@ Berikut adalah ringkasan data kesehatan saya dari ${records.length} catatan tera
 ${summary}${previousSection}
 
 Berdasarkan data di atas, berikan:
-1. Analisis kondisi kesehatan saya secara keseluruhan (dalam 2-3 paragraf)
-2. Perbandingan dengan analisis sebelumnya (jika ada): apakah kondisi pasien membaik, stabil, atau memburuk? Jelaskan indikator-indikator spesifik yang menunjukkan perubahan tersebut.
-3. 5 rekomendasi langkah nyata yang bisa saya lakukan untuk memperbaiki kesehatan saya
+1. Analisis kondisi kesehatan saya secara singkat, padat, dan jelas dalam 1 paragraf. Tidak perlu terlalu detail.
+2. Perbandingan singkat dengan analisis sebelumnya (jika ada): apakah kondisi pasien membaik, stabil, atau memburuk?
+3. Rekomendasi singkat langkah nyata yang bisa saya lakukan untuk memperbaiki kesehatan saya.
 
 Format respons dalam JSON:
 {
   "analysis": "...",
-  "recommendations": ["...", "...", "...", "...", "..."]
+  "recommendations": ["..."]
 }
 
 PENTING: Di bagian "analysis", sertakan paragraf khusus tentang perbandingan kondisi (membaik/stabil/memburuk) dengan data sebelumnya jika tersedia.`;
