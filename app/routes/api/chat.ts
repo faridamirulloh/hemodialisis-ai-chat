@@ -39,6 +39,18 @@ export async function sendChat(body: any, api: string) {
       const data = JSON.parse(text);
       if (!data.output) {
         data.output = QUOTA_WARNING;
+      } else if (typeof data.output === 'string') {
+        const removeStrings = [
+          '(Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+          '(Hemodialysis Trained Data - Quick Prompt Answer)',
+          'Hemodialysis Trained Data - Quick Prompt Answer.pdf,',
+          ', Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+          'Hemodialysis Trained Data - ',
+          '.pdf',
+        ];
+        removeStrings.forEach((str) => {
+          data.output = data.output.split(str).join('');
+        });
       }
       return new Response(JSON.stringify(data), {
         headers: { 'Content-Type': 'application/json' },

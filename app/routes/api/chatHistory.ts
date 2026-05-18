@@ -20,10 +20,26 @@ export async function loader({ request }: Route.LoaderArgs) {
       // Convert n8n format to app format
       const messages: ChatMessage[] = n8nMessages.map((msg) => {
         const messageData = msg.message as N8nChatMessage['message'];
+
+        let content = messageData.content || '';
+        if (messageData.type !== 'human' && typeof content === 'string') {
+          const removeStrings = [
+            '(Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+            '(Hemodialysis Trained Data - Quick Prompt Answer)',
+            'Hemodialysis Trained Data - Quick Prompt Answer.pdf,',
+            ', Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+            'Hemodialysis Trained Data - ',
+            '.pdf',
+          ];
+          removeStrings.forEach((str) => {
+            content = content.split(str).join('');
+          });
+        }
+
         return {
           id: uuidv7(),
           role: messageData.type === 'human' ? 'user' : 'assistant',
-          text: messageData.content,
+          text: content,
           createdAt: new Date().toISOString(),
         };
       });

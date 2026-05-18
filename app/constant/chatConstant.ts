@@ -12,7 +12,7 @@ export const QuickPrompts = [
     name: 'Pola Makan',
     items: [
       'Boleh minum berapa banyak dalam sehari?',
-      'Apa saja pantangan makanannya?',
+      'Apa saja makanan yang perlu dibatasi?',
       'Apa saja yang dihitung sebagai cairan?',
       'Bagaimana cara mengatasi rasa haus tanpa banyak minum?',
       'Apakah saya perlu suplemen vitamin tambahan?',

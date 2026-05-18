@@ -68,7 +68,14 @@
     "overrides": {
       "react": "^19.2.3",
       "react-dom": "^19.2.3"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@prisma/engines",
+      "bcrypt",
+      "esbuild",
+      "prisma"
+    ]
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

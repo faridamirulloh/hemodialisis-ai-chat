@@ -6,11 +6,11 @@ WORKDIR /app
 
 FROM base AS development-dependencies-env
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
 FROM base AS production-dependencies-env
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --no-frozen-lockfile --ignore-scripts
 
 FROM base AS build-env
 COPY . .
