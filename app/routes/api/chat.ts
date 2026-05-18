@@ -42,9 +42,11 @@ export async function sendChat(body: any, api: string) {
       } else if (typeof data.output === 'string') {
         const removeStrings = [
           '(Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
-          '(Hemodialysis Trained Data - Quick Prompt Answer)',
           'Hemodialysis Trained Data - Quick Prompt Answer.pdf,',
           ', Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+          '(Hemodialysis Trained Data - Quick Prompt Answer)',
+          'Hemodialysis Trained Data - Quick Prompt Answer,',
+          ', Hemodialysis Trained Data - Quick Prompt Answer)',
           'Hemodialysis Trained Data - ',
           '.pdf',
         ];

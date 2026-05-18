@@ -25,9 +25,11 @@ export async function loader({ request }: Route.LoaderArgs) {
         if (messageData.type !== 'human' && typeof content === 'string') {
           const removeStrings = [
             '(Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
-            '(Hemodialysis Trained Data - Quick Prompt Answer)',
             'Hemodialysis Trained Data - Quick Prompt Answer.pdf,',
             ', Hemodialysis Trained Data - Quick Prompt Answer.pdf)',
+            '(Hemodialysis Trained Data - Quick Prompt Answer)',
+            'Hemodialysis Trained Data - Quick Prompt Answer,',
+            ', Hemodialysis Trained Data - Quick Prompt Answer)',
             'Hemodialysis Trained Data - ',
             '.pdf',
           ];
